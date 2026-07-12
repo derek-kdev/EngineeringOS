@@ -1,8 +1,13 @@
-import { Providers } from "@/providers/theme.providers";
-import Topbar from "@/components/Topbar";
-import Footer from "@/components/Footer";
+import type { Metadata } from "next";
 import "./globals.css";
+import { Providers } from "@/providers/theme.providers";
+import ClientLayout from "@/components/ClientLayout";
 
+export const metadata: Metadata = {
+  title: "EngineeringOS",
+  description:
+    "EngineeringOS is a modern engineering platform for design, simulation, collaboration, and intelligent engineering workflows.",
+};
 
 export default function RootLayout({
   children,
@@ -11,13 +16,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body>
+      <body className="bg-[#0A0A0A] text-white antialiased">
+        {/* Optional viewport glow effect — you can keep or remove */}
+        <div className="viewport-glow" />
+
         <Providers>
-          <Topbar />
-          <main className="pt-16 pb-14 min-h-screen">
-            {children}
-          </main>
-          <Footer />
+          <ClientLayout>{children}</ClientLayout>
         </Providers>
       </body>
     </html>
