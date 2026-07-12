@@ -1,8 +1,9 @@
+// apps/web/components/dashboard/DashboardSidebar.tsx
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useUIStore } from "@/stores/ui";
 import {
   LayoutDashboard,
   FolderKanban,
@@ -32,33 +33,31 @@ const navItems: NavItem[] = [
   { name: "Settings", href: "/dashboard/settings", icon: <Settings size={20} /> },
 ];
 
-export default function DashboardSidebar({ 
-  isOpen, 
-  onToggle 
-}: { 
-  isOpen: boolean; 
-  onToggle: () => void;
-}) {
+export default function DashboardSidebar() {
   const pathname = usePathname();
+  const { sidebarOpen, toggleSidebar } = useUIStore();
 
   return (
     <aside
       className={`
-        fixed left-0 top-0 z-40 h-full
-        bg-[#111111]/95 backdrop-blur-xl
-        border-r border-[#FF6200]/20
+        fixed left-3 top-[78px] z-40 h-[calc(100vh-90px)]
+        bg-white/5 backdrop-blur-2xl
+        border border-white/10
+        rounded-2xl
         transition-all duration-300
-        ${isOpen ? "w-64" : "w-20"}
+        ${sidebarOpen ? "w-64" : "w-20"}
+        shadow-[0_8px_32px_rgba(0,0,0,0.2)]
+        flex flex-col
       `}
     >
-      {/* Logo */}
-      <div className="flex h-20 items-center justify-between px-4 border-b border-[#FF6200]/20">
+      {/* Logo area */}
+      <div className="flex h-14 items-center px-4 border-b border-white/10">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#FF6200] to-[#FFB300] font-bold text-black">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#FF6200] to-[#FFB300] font-bold text-black">
             ⚙
           </div>
-          {isOpen && (
-            <span className="text-lg font-bold text-white">
+          {sidebarOpen && (
+            <span className="text-base font-bold text-white">
               Engineering<span className="font-mono">OS</span>
             </span>
           )}
@@ -66,7 +65,7 @@ export default function DashboardSidebar({
       </div>
 
       {/* Navigation */}
-      <nav className="mt-6 px-3">
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -74,25 +73,25 @@ export default function DashboardSidebar({
               key={item.name}
               href={item.href}
               className={`
-                flex items-center gap-3 rounded-xl px-4 py-3
+                flex items-center gap-3 rounded-xl px-3 py-2.5
                 transition-all duration-200
                 ${isActive 
-                  ? "bg-gradient-to-r from-[#FF6200]/20 to-[#FFB300]/10 border border-[#FF6200]/30" 
-                  : "hover:bg-[#FF6200]/10"
+                  ? "bg-white/10 border-l-2 border-white" 
+                  : "hover:bg-white/5"
                 }
-                ${!isOpen && "justify-center"}
+                ${!sidebarOpen && "justify-center"}
               `}
             >
-              <span className={isActive ? "text-[#FFB300]" : "text-zinc-400"}>
+              <span className={`${isActive ? "text-white" : "text-white/70"}`}>
                 {item.icon}
               </span>
-              {isOpen && (
+              {sidebarOpen && (
                 <div className="flex flex-1 items-center justify-between">
-                  <span className={`text-sm ${isActive ? "text-white" : "text-zinc-400"}`}>
+                  <span className={`text-sm ${isActive ? "text-white" : "text-white/80"}`}>
                     {item.name}
                   </span>
                   {item.badge && (
-                    <span className="rounded-full bg-[#FF6200]/20 px-2 py-0.5 text-xs text-[#FFB300]">
+                    <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs text-white/80">
                       {item.badge}
                     </span>
                   )}
@@ -105,22 +104,22 @@ export default function DashboardSidebar({
 
       {/* Toggle Button */}
       <button
-        onClick={onToggle}
-        className="absolute -right-3 top-24 flex h-6 w-6 items-center justify-center rounded-full bg-[#FF6200] text-black shadow-lg shadow-[#FF6200]/30"
+        onClick={toggleSidebar}
+        className="absolute -right-3 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-full bg-white/20 border border-white/10 text-white/80 hover:bg-white/30 transition"
       >
-        {isOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+        {sidebarOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
       </button>
 
       {/* User Profile */}
-      <div className="absolute bottom-0 left-0 right-0 border-t border-[#FF6200]/20 p-4">
-        <div className={`flex items-center gap-3 ${!isOpen && "justify-center"}`}>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#FF6200] to-[#FFB300] text-sm font-bold text-black">
+      <div className="border-t border-white/10 p-4">
+        <div className={`flex items-center gap-3 ${!sidebarOpen && "justify-center"}`}>
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#FF6200] to-[#FFB300] text-sm font-bold text-black">
             K
           </div>
-          {isOpen && (
-            <div className="flex-1">
-              <p className="text-sm font-medium text-white">Kingsley</p>
-              <p className="text-xs text-zinc-500">Lead Engineer</p>
+          {sidebarOpen && (
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate">Kingsley</p>
+              <p className="text-xs text-white/60 truncate">Lead Engineer</p>
             </div>
           )}
         </div>

@@ -1,0 +1,148 @@
+// apps/web/lib/simulation/materials.ts
+
+export interface Material {
+  name: string;
+  density: number; // kg/m³
+  youngsModulus: number; // GPa
+  yieldStrength: number; // MPa
+  ultimateStrength: number; // MPa
+  thermalExpansion: number; // 1/°C (×10⁻⁶)
+  specificHeat: number; // J/(kg·K)
+  thermalConductivity: number; // W/(m·K)
+  maxOperatingTemp: number; // °C
+  color: string;
+  description: string;
+}
+
+export const materials: Material[] = [
+  {
+    name: "Aluminum",
+    density: 2700,
+    youngsModulus: 69,
+    yieldStrength: 276,
+    ultimateStrength: 310,
+    thermalExpansion: 23.1e-6,
+    specificHeat: 900,
+    thermalConductivity: 237,
+    maxOperatingTemp: 200,
+    color: "#C0C0C0",
+    description: "Lightweight, corrosion-resistant, good thermal conductivity",
+  },
+  {
+    name: "Steel (Carbon)",
+    density: 7850,
+    youngsModulus: 200,
+    yieldStrength: 370,
+    ultimateStrength: 440,
+    thermalExpansion: 12e-6,
+    specificHeat: 490,
+    thermalConductivity: 45,
+    maxOperatingTemp: 400,
+    color: "#808080",
+    description: "High strength, durable, widely used in structural applications",
+  },
+  {
+    name: "Steel (Stainless)",
+    density: 8000,
+    youngsModulus: 193,
+    yieldStrength: 215,
+    ultimateStrength: 505,
+    thermalExpansion: 17.3e-6,
+    specificHeat: 500,
+    thermalConductivity: 16.2,
+    maxOperatingTemp: 400,
+    color: "#A8A8A8",
+    description: "Corrosion-resistant, high strength, medical-grade",
+  },
+  {
+    name: "Titanium",
+    density: 4510,
+    youngsModulus: 110,
+    yieldStrength: 830,
+    ultimateStrength: 900,
+    thermalExpansion: 8.6e-6,
+    specificHeat: 520,
+    thermalConductivity: 21.9,
+    maxOperatingTemp: 400,
+    color: "#A0A0A0",
+    description: "Exceptional strength-to-weight ratio, aerospace-grade",
+  },
+  {
+    name: "Copper",
+    density: 8960,
+    youngsModulus: 117,
+    yieldStrength: 210,
+    ultimateStrength: 220,
+    thermalExpansion: 16.5e-6,
+    specificHeat: 385,
+    thermalConductivity: 401,
+    maxOperatingTemp: 200,
+    color: "#B87333",
+    description: "Excellent electrical and thermal conductivity",
+  },
+  {
+    name: "Brass",
+    density: 8500,
+    youngsModulus: 100,
+    yieldStrength: 200,
+    ultimateStrength: 350,
+    thermalExpansion: 18.7e-6,
+    specificHeat: 380,
+    thermalConductivity: 109,
+    maxOperatingTemp: 200,
+    color: "#C5A646",
+    description: "Good machinability, corrosion-resistant",
+  },
+  {
+    name: "Bronze",
+    density: 8800,
+    youngsModulus: 120,
+    yieldStrength: 180,
+    ultimateStrength: 350,
+    thermalExpansion: 18e-6,
+    specificHeat: 380,
+    thermalConductivity: 75,
+    maxOperatingTemp: 200,
+    color: "#CD7F32",
+    description: "Excellent wear resistance, marine applications",
+  },
+  {
+    name: "Tungsten",
+    density: 19250,
+    youngsModulus: 411,
+    yieldStrength: 750,
+    ultimateStrength: 980,
+    thermalExpansion: 4.5e-6,
+    specificHeat: 130,
+    thermalConductivity: 173,
+    maxOperatingTemp: 3000,
+    color: "#A0A0A0",
+    description: "Highest melting point, aerospace and high-temp applications",
+  },
+  {
+    name: "Inconel 718",
+    density: 8190,
+    youngsModulus: 180,
+    yieldStrength: 1034,
+    ultimateStrength: 1240,
+    thermalExpansion: 13e-6,
+    specificHeat: 435,
+    thermalConductivity: 11.4,
+    maxOperatingTemp: 700,
+    color: "#9E9E9E",
+    description: "High-temperature alloy, jet engines, gas turbines",
+  },
+  {
+    name: "ABS Plastic",
+    density: 1050,
+    youngsModulus: 2.3,
+    yieldStrength: 40,
+    ultimateStrength: 44,
+    thermalExpansion: 72e-6,
+    specificHeat: 1500,
+    thermalConductivity: 0.25,
+    maxOperatingTemp: 80,
+    color: "#F5E6D0",
+    description: "Common 3D printing material, good impact resistance",
+  },
+];

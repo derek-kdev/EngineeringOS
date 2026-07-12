@@ -1,6 +1,7 @@
+// apps/web/app/dashboard/layout.tsx
 "use client";
 
-import { useState } from "react";
+import { useUIStore } from "@/stores/ui";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import { motion } from "framer-motion";
 
@@ -9,20 +10,17 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { sidebarOpen } = useUIStore();
 
   return (
     <div className="flex min-h-screen bg-[#0A0A0A]">
-      <DashboardSidebar
-        isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
-      />
+      <DashboardSidebar />
 
       <motion.main
         className={`
           flex-1 transition-all duration-300
-          ${sidebarOpen ? "ml-64" : "ml-20"}
-          pt-20 px-8 pb-8
+          ${sidebarOpen ? "ml-72" : "ml-28"}
+          pt-24 px-8 pb-8
         `}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

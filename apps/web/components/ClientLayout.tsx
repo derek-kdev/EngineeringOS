@@ -1,3 +1,4 @@
+// apps/web/components/ClientLayout.tsx
 "use client";
 
 import { usePathname } from "next/navigation";
@@ -15,7 +16,8 @@ export default function ClientLayout({
   return (
     <>
       {!isAuthPage && <Topbar />}
-      <main className={isAuthPage ? "min-h-screen" : "min-h-screen pt-28 pb-16"}>
+      {/* Changed pt-28 to pt-20 – no gap between topbar and content */}
+      <main className={isAuthPage ? "min-h-screen" : "min-h-screen pt-20 pb-16"}>
         {children}
       </main>
       {!isAuthPage && <Footer />}

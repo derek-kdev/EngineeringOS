@@ -1,11 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { StatCard } from "@/components/ui/StatCard";
-import { DashboardStats as StatsType } from "@/types/dashboard";
+import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
+import { AnimatedCard } from "@/components/ui/AnimatedCard";
+import { DashboardData } from "@/types/dashboard";
 
 interface DashboardStatsProps {
-  stats: StatsType;
+  stats: DashboardData;
 }
 
 export default function DashboardStats({ stats }: DashboardStatsProps) {
@@ -26,7 +27,7 @@ export default function DashboardStats({ stats }: DashboardStatsProps) {
     },
     {
       label: "Prototype Progress",
-      value: `${stats?.prototypeProgress || 0}%`,
+      value: stats?.prototypeProgress || 0,
       change: "+8% this month",
       trend: "up",
       icon: "📊",
@@ -43,14 +44,33 @@ export default function DashboardStats({ stats }: DashboardStatsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {statsData.map((stat, index) => (
-        <motion.div
+        <AnimatedCard
           key={stat.label}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.1 }}
+          delay={index * 0.1}
+          direction="up"
+          glow={true}
+          className={`
+            rounded-2xl border border-[#FF6200]/20
+            bg-[#111111]/80 p-6 backdrop-blur-xl
+            transition-all hover:border-[#FF8A00]/40
+            hover:shadow-[0_0_40px_rgba(255,138,0,0.1)]
+          `}
         >
-          <StatCard {...stat} />
-        </motion.div>
+          <div className="flex items-center justify-between">
+            <span className="text-2xl animate-float">{stat.icon}</span>
+            <span className="text-xs font-medium text-emerald-400">
+              {stat.change}
+            </span>
+          </div>
+          <p className="mt-3 text-2xl font-bold text-white">
+            {typeof stat.value === "number" ? (
+              <AnimatedCounter value={stat.value} />
+            ) : (
+              stat.value
+            )}
+          </p>
+          <p className="mt-1 text-sm text-zinc-400">{stat.label}</p>
+        </AnimatedCard>
       ))}
     </div>
   );

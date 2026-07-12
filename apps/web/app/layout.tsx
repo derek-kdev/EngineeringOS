@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "@/providers/theme.providers";
+import { AuthProvider } from "@/providers/auth.providers";
 import ClientLayout from "@/components/ClientLayout";
 
 export const metadata: Metadata = {
@@ -16,12 +17,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="bg-[#0A0A0A] text-white antialiased">
-        {/* Optional viewport glow effect — you can keep or remove */}
+      <body className="bg-[#0A0A0A] text-white antialiased" suppressHydrationWarning>
+        {/* Viewport glow effect */}
         <div className="viewport-glow" />
 
         <Providers>
-          <ClientLayout>{children}</ClientLayout>
+          <AuthProvider>
+            <ClientLayout>{children}</ClientLayout>
+          </AuthProvider>
         </Providers>
       </body>
     </html>
