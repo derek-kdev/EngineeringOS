@@ -1,3 +1,71 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* ---- Theme Support ---- */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---- Smooth Transitions ---- */
+* {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* ---- Base Styles ---- */
+body {
+  background-color: #0A0A0A;
+  color: #FFFFFF;
+}
+
+.dark body {
+  background-color: #0A0A0A;
+  color: #FFFFFF;
+}
+
+/* ---- Custom Animations ---- */
+@keyframes pulse-once {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); box-shadow: 0 0 40px rgba(255, 138, 0, 0.5); }
+  100% { transform: scale(1); }
+}
+
+.animate-pulse-once {
+  animation: pulse-once 2s ease-out 1;
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(255, 98, 0, 0.2); }
+  50% { box-shadow: 0 0 60px rgba(255, 138, 0, 0.6); }
+}
+
+.glow-pulse {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* ---- Custom Orange Glow Border (viewport effect) ---- */
+.viewport-glow {
+  position: relative;
+}
+
+.viewport-glow::before {
+  content: '';
+  position: fixed;
+  inset: 12px;
+  border: 1px solid rgba(255, 98, 0, 0.15);
+  border-radius: 24px;
+  pointer-events: none;
+  z-index: 9998;
+  animation: glow-pulse 4s ease-in-out infinite;
+}
+
+/* ---- Custom Scrollbar ---- */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0A0A0A;
+}
+::-webkit-scrollbar-thumb {
+  background: #FF6200;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #FF8A00;
+}
