@@ -1,12 +1,28 @@
 import { Controller, Get } from '@nestjs/common';
-import { AppService } from './app.service';
+//import { AppService } from './app.service.js';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
-
+  constructor() {
+    console.log('AppController initialized');
+  }
   @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  getRoot() {
+    return {
+      name: 'EngineeringOS API',
+      version: '1.0.0',
+      status: 'OK',
+      description: 'EngineeringOS API',
+      documentation: '/api/docs',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Get('health')
+  getHealth() {
+    return {
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+    };
   }
 }

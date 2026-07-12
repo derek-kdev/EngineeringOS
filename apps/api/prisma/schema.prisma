@@ -1,0 +1,493 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+
+  datasource db {
+  provider = "postgresql"
+ /* * url = env("postgresql://engineeringos:password@localhost:5432/engineeringos?schema=public") */
+}
+
+
+/**
+ * |--------------------------------------------------------------------------
+ * | Enums
+ * |--------------------------------------------------------------------------
+ */
+
+enum OrganizationRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum MembershipStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+  REMOVED
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  CANCELLED
+}
+
+enum NotificationType {
+  SYSTEM
+  SECURITY
+  ORGANIZATION
+  ACCOUNT
+  UPDATE
+  ALERT
+}
+
+enum Theme {
+  SYSTEM
+  LIGHT
+  DARK
+}
+
+enum Language {
+  EN
+}
+
+enum DateFormat {
+  DD_MM_YYYY
+  MM_DD_YYYY
+  YYYY_MM_DD
+}
+
+enum TimeFormat {
+  TWELVE_HOUR
+  TWENTY_FOUR_HOUR
+}
+
+/**
+ * |--------------------------------------------------------------------------
+ * | Identity Domain
+ * |--------------------------------------------------------------------------
+ */
+
+model User {
+  id String @id @default(cuid())
+
+  email        String @unique
+  passwordHash String
+
+  firstName   String
+  lastName    String
+  displayName String?
+
+  avatarUrl String?
+  phone     String?
+  jobTitle  String?
+
+  locale   Language @default(EN)
+  timezone String   @default("UTC")
+
+  isActive Boolean @default(true)
+
+  lastLoginAt     DateTime?
+  emailVerifiedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  deletedAt DateTime?
+
+  memberships Membership[]
+
+  ownedOrganizations Organization[] @relation("OrganizationOwner")
+
+  sessions      Session[]
+  refreshTokens RefreshToken[]
+
+  passwordResetTokens PasswordResetToken[]
+  verificationTokens  EmailVerificationToken[]
+
+  preferences UserPreference?
+
+  notifications Notification[]
+
+  auditLogs AuditLog[]
+
+  createdApiKeys ApiKey[]     @relation("ApiKeyCreator")
+  invitations    Invitation[]
+
+  @@index([email])
+  @@index([createdAt])
+}
+
+model Session {
+  id String @id @default(cuid())
+
+  userId String
+
+  ipAddress String?
+  userAgent String?
+
+  expiresAt DateTime
+  revokedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+}
+
+model RefreshToken {
+  id String @id @default(cuid())
+
+  userId String
+
+  tokenHash String @unique
+
+  expiresAt DateTime
+  revokedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+}
+
+model PasswordResetToken {
+  id String @id @default(cuid())
+
+  userId String
+
+  tokenHash String @unique
+
+  expiresAt DateTime
+
+  usedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model EmailVerificationToken {
+  id String @id @default(cuid())
+
+  userId String
+
+  tokenHash String @unique
+
+  expiresAt DateTime
+
+  usedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+/**
+ * |--------------------------------------------------------------------------
+ * | User Preferences
+ * |--------------------------------------------------------------------------
+ */
+
+model UserPreference {
+  id String @id @default(cuid())
+
+  userId String @unique
+
+  theme Theme @default(SYSTEM)
+
+  language Language @default(EN)
+
+  timezone String @default("UTC")
+
+  dateFormat DateFormat @default(YYYY_MM_DD)
+
+  timeFormat TimeFormat @default(TWENTY_FOUR_HOUR)
+
+  emailNotifications Boolean @default(true)
+  pushNotifications  Boolean @default(true)
+  inAppNotifications Boolean @default(true)
+
+  dashboardLayout Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/**
+ * |--------------------------------------------------------------------------
+ * | Multi Tenancy Domain
+ * |--------------------------------------------------------------------------
+ */
+
+model Organization {
+  id String @id @default(cuid())
+
+  ownerId String
+
+  name String
+
+  slug String @unique
+
+  logoUrl String?
+
+  description String?
+
+  industry String?
+
+  website String?
+
+  size String?
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  deletedAt DateTime?
+
+  owner User @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+
+  memberships Membership[]
+
+  settings OrganizationSettings?
+
+  invitations Invitation[]
+
+  apiKeys ApiKey[]
+
+  notifications Notification[]
+
+  auditLogs AuditLog[]
+
+  @@index([slug])
+  @@index([ownerId])
+  @@index([createdAt])
+}
+
+model OrganizationSettings {
+  id String @id @default(cuid())
+
+  organizationId String @unique
+
+  timezone String @default("UTC")
+
+  currency String @default("USD")
+
+  defaultRole OrganizationRole @default(MEMBER)
+
+  dateFormat DateFormat @default(YYYY_MM_DD)
+
+  timeFormat TimeFormat @default(TWENTY_FOUR_HOUR)
+
+  weekStartsOn Int @default(1)
+
+  allowGuestAccess Boolean @default(false)
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model Membership {
+  id String @id @default(cuid())
+
+  organizationId String
+
+  userId String
+
+  role OrganizationRole @default(MEMBER)
+
+  status MembershipStatus @default(INVITED)
+
+  joinedAt DateTime?
+
+  removedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
+  @@index([status])
+}
+
+model Invitation {
+  id String @id @default(cuid())
+
+  organizationId String
+
+  invitedById String
+
+  email String
+
+  role OrganizationRole
+
+  status InvitationStatus @default(PENDING)
+
+  tokenHash String @unique
+
+  expiresAt DateTime
+
+  acceptedAt DateTime?
+
+  cancelledAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  invitedBy User @relation(fields: [invitedById], references: [id], onDelete: Restrict)
+
+  @@index([organizationId])
+  @@index([email])
+  @@index([expiresAt])
+}
+
+/**
+ * |--------------------------------------------------------------------------
+ * | Platform Services
+ * |--------------------------------------------------------------------------
+ */
+
+model ApiKey {
+  id String @id @default(cuid())
+
+  organizationId String
+
+  createdById String
+
+  name String
+
+  description String?
+
+  prefix String
+
+  keyHash String @unique
+
+  scopes Json?
+
+  lastUsedAt DateTime?
+
+  expiresAt DateTime?
+
+  revokedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdBy User @relation("ApiKeyCreator", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([organizationId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+}
+
+model Notification {
+  id String @id @default(cuid())
+
+  organizationId String?
+
+  userId String
+
+  type NotificationType
+
+  title String
+
+  message String
+
+  actionUrl String?
+
+  readAt DateTime?
+
+  dismissedAt DateTime?
+
+  archivedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([readAt])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id String @id @default(cuid())
+
+  organizationId String
+
+  userId String?
+
+  action String
+
+  entity String
+
+  entityId String
+
+  oldValues Json?
+
+  newValues Json?
+
+  metadata Json?
+
+  ipAddress String?
+
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([entity, entityId])
+  @@index([userId])
+}

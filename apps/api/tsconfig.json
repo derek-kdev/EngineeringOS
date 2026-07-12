@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
-    "module": "nodenext",
+    "module": "NodeNext",
     "moduleResolution": "nodenext",
+    "strict": true,
     "resolvePackageJsonExports": true,
     "esModuleInterop": true,
     "isolatedModules": true,
@@ -10,8 +11,9 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
-    "target": "ES2023",
+    "target": "ES2022",
     "sourceMap": true,
+    "rootDir": ".",
     "outDir": "./dist",
     "baseUrl": "./",
     "incremental": true,
@@ -20,6 +22,12 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
-    "noFallthroughCasesInSwitch": false
-  }
+    "noFallthroughCasesInSwitch": false,
+    "paths": {
+      "@/*" : ["src/*"]
+    }
+    //"ignoreDeprecations": "6.0"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
