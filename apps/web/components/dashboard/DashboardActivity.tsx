@@ -1,3 +1,4 @@
+// apps/web/components/dashboard/DashboardActivity.tsx
 "use client";
 
 import { Activity } from "lucide-react";

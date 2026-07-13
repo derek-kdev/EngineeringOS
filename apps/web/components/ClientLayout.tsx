@@ -11,16 +11,20 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const isAuthPage = pathname === "/signin" || pathname === "/signup";
+  const isAuthPage = ["/signin", "/signup", "/forgot-password", "/reset-password"].includes(pathname);
+  const isDashboard = pathname?.startsWith("/dashboard");
 
   return (
-    <>
+    <div className="flex flex-col min-h-screen">
       {!isAuthPage && <Topbar />}
-      {/* Changed pt-28 to pt-20 – no gap between topbar and content */}
-      <main className={isAuthPage ? "min-h-screen" : "min-h-screen pt-20 pb-16"}>
+      <main className={isAuthPage ? "min-h-screen" : "flex-1 pt-20 pb-16"}>
         {children}
       </main>
-      {!isAuthPage && <Footer />}
-    </>
+      {!isAuthPage && (
+        <div className={isDashboard ? "ml-64 mr-3" : ""}>
+          <Footer />
+        </div>
+      )}
+    </div>
   );
 }

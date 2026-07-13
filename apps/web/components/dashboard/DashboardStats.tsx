@@ -1,7 +1,7 @@
+// apps/web/components/dashboard/DashboardStats.tsx
 "use client";
 
 import { motion } from "framer-motion";
-import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
 import { AnimatedCard } from "@/components/ui/AnimatedCard";
 import { DashboardData } from "@/types/dashboard";
 
@@ -63,11 +63,7 @@ export default function DashboardStats({ stats }: DashboardStatsProps) {
             </span>
           </div>
           <p className="mt-3 text-2xl font-bold text-white">
-            {typeof stat.value === "number" ? (
-              <AnimatedCounter value={stat.value} />
-            ) : (
-              stat.value
-            )}
+            {stat.value}
           </p>
           <p className="mt-1 text-sm text-zinc-400">{stat.label}</p>
         </AnimatedCard>

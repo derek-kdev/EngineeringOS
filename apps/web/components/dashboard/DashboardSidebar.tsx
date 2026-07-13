@@ -34,17 +34,21 @@ export default function DashboardSidebar() {
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-white/5 backdrop-blur-2xl border-r border-white/10 flex flex-col">
-      {/* Logo – only the gear icon, centered */}
+      {/* Logo – using Pinterest image */}
       <div className="flex items-center justify-center h-16 border-b border-white/10">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#FF6200] to-[#FFB300] font-bold text-black shadow-lg shadow-[#FF6200]/25">
-          ⚙
+        <div className="flex h-10 w-10 items-center justify-center rounded-full overflow-hidden shadow-lg shadow-[#FF6200]/25">
+          <img
+            src="https://i.pinimg.com/1200x/0b/66/55/0b66550f4aaba065fc955f37fd631a7a.jpg"
+            alt="EngineeringOS"
+            className="h-full w-full object-cover"
+          />
         </div>
       </div>
 
-      {/* New Button */}
+      {/* New Idea Button – Orange plate color */}
       <div className="px-3 py-3">
-        <button className="flex w-full items-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-sm text-white hover:bg-white/20 transition">
-          <Plus size={16} /> New Project
+        <button className="flex w-full items-center gap-2 rounded-lg bg-[#FF6200]/20 px-3 py-2 text-sm text-[#FFB300] hover:bg-[#FF6200]/30 transition border border-[#FF6200]/30">
+          <Plus size={16} /> New Idea
         </button>
       </div>
 

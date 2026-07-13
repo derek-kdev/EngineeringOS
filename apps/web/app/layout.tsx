@@ -6,8 +6,7 @@ import ClientLayout from "@/components/ClientLayout";
 
 export const metadata: Metadata = {
   title: "EngineeringOS",
-  description:
-    "EngineeringOS is a modern engineering platform for design, simulation, collaboration, and intelligent engineering workflows.",
+  description: "...",
 };
 
 export default function RootLayout({
@@ -18,9 +17,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="bg-[#0A0A0A] text-white antialiased" suppressHydrationWarning>
-        {/* Viewport glow effect */}
         <div className="viewport-glow" />
-
         <Providers>
           <AuthProvider>
             <ClientLayout>{children}</ClientLayout>
