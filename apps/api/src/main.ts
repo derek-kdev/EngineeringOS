@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module.js';
+import { AppModule } from './app.module';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -10,6 +10,7 @@ import { json, urlencoded } from 'express';
 const logger = new Logger('Bootstrap');
 
 async function bootstrap() {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger:
       process.env.NODE_ENV === 'production'
@@ -19,7 +20,6 @@ async function bootstrap() {
 
   /* Security */
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   app.use(helmet());
 
   const corsOrigin =
@@ -43,7 +43,6 @@ async function bootstrap() {
 
   /* Performance */
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   app.use(compression());
 
   /* Request Body Limits
@@ -112,4 +111,7 @@ process.on('unhandledRejection', (reason) => {
   processLogger.error('Unhandled Promise Rejection', String(reason));
 });
 
-await bootstrap();
+bootstrap().catch((err) => {
+  logger.error('Failed to start application', err);
+  process.exit(1);
+});
