@@ -3,12 +3,12 @@ generator client {
   output   = "../generated/prisma"
 }
 
-
-  datasource db {
-  provider = "postgresql"
- /* * url = env("postgresql://engineeringos:password@localhost:5432/engineeringos?schema=public") */
+datasource db {
+  provider = "postgresql" 
+  /**
+   * url = env("postgresql://engineeringos:password@localhost:5432/engineeringos?schema=public")
+   */
 }
-
 
 /**
  * |--------------------------------------------------------------------------

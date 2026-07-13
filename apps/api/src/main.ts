@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
@@ -64,7 +65,7 @@ async function bootstrap() {
   );
 
   /* API Configuration */
-/*  app.setGlobalPrefix('api', {
+  /*  app.setGlobalPrefix('api', {
     exclude: ['health'],
   });
 
