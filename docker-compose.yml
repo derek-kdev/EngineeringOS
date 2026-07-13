@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16
+    image: docker.io/library/postgres:16
     container_name: engineeringos-postgres
     restart: unless-stopped
 
@@ -15,8 +15,9 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
 
+
   redis:
-    image: redis:7-alpine
+    image: docker.io/library/redis:7-alpine
     container_name: engineeringos-redis
     restart: unless-stopped
 
@@ -25,6 +26,7 @@ services:
 
     volumes:
       - redis-data:/data
+
 
 volumes:
   postgres-data:

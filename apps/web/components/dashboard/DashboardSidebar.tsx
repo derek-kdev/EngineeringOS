@@ -3,7 +3,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useUIStore } from "@/stores/ui";
 import {
   LayoutDashboard,
   FolderKanban,
@@ -11,9 +10,7 @@ import {
   Library,
   FlaskConical,
   Users,
-  Settings,
-  ChevronLeft,
-  ChevronRight,
+  Plus,
 } from "lucide-react";
 
 interface NavItem {
@@ -24,104 +21,78 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { name: "Overview", href: "/dashboard", icon: <LayoutDashboard size={20} /> },
-  { name: "Projects", href: "/dashboard/projects", icon: <FolderKanban size={20} />, badge: "6" },
-  { name: "Ideas Hub", href: "/dashboard/ideas", icon: <Lightbulb size={20} />, badge: "3" },
-  { name: "Research Library", href: "/dashboard/research", icon: <Library size={20} />, badge: "24" },
-  { name: "Prototype Lab", href: "/dashboard/prototypes", icon: <FlaskConical size={20} />, badge: "18" },
-  { name: "Community", href: "/dashboard/community", icon: <Users size={20} /> },
-  { name: "Settings", href: "/dashboard/settings", icon: <Settings size={20} /> },
+  { name: "Dashboard", href: "/dashboard", icon: <LayoutDashboard size={18} /> },
+  { name: "Ideas Hub", href: "/dashboard/ideas", icon: <Lightbulb size={18} />, badge: "3" },
+  { name: "Projects", href: "/dashboard/projects", icon: <FolderKanban size={18} />, badge: "6" },
+  { name: "Research Library", href: "/dashboard/research", icon: <Library size={18} />, badge: "24" },
+  { name: "Prototype Lab", href: "/dashboard/prototypes", icon: <FlaskConical size={18} />, badge: "18" },
+  { name: "Community", href: "/dashboard/community", icon: <Users size={18} /> },
 ];
 
 export default function DashboardSidebar() {
   const pathname = usePathname();
-  const { sidebarOpen, toggleSidebar } = useUIStore();
 
   return (
-    <aside
-      className={`
-        fixed left-3 top-[78px] z-40 h-[calc(100vh-90px)]
-        bg-white/5 backdrop-blur-2xl
-        border border-white/10
-        rounded-2xl
-        transition-all duration-300
-        ${sidebarOpen ? "w-64" : "w-20"}
-        shadow-[0_8px_32px_rgba(0,0,0,0.2)]
-        flex flex-col
-      `}
-    >
-      {/* Logo area */}
-      <div className="flex h-14 items-center px-4 border-b border-white/10">
-        <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#FF6200] to-[#FFB300] font-bold text-black">
-            ⚙
-          </div>
-          {sidebarOpen && (
-            <span className="text-base font-bold text-white">
-              Engineering<span className="font-mono">OS</span>
-            </span>
-          )}
-        </Link>
+    <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-white/5 backdrop-blur-2xl border-r border-white/10 flex flex-col">
+      {/* Logo – only the gear icon, centered */}
+      <div className="flex items-center justify-center h-16 border-b border-white/10">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#FF6200] to-[#FFB300] font-bold text-black shadow-lg shadow-[#FF6200]/25">
+          ⚙
+        </div>
+      </div>
+
+      {/* New Button */}
+      <div className="px-3 py-3">
+        <button className="flex w-full items-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-sm text-white hover:bg-white/20 transition">
+          <Plus size={16} /> New Project
+        </button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+      <nav className="flex-1 overflow-y-auto px-3 space-y-0.5">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive =
+            item.href === "/dashboard"
+              ? pathname === "/dashboard"
+              : pathname?.startsWith(item.href);
+
           return (
             <Link
               key={item.name}
               href={item.href}
               className={`
-                flex items-center gap-3 rounded-xl px-3 py-2.5
+                flex items-center gap-3 rounded-lg px-3 py-2
                 transition-all duration-200
                 ${isActive 
-                  ? "bg-white/10 border-l-2 border-white" 
-                  : "hover:bg-white/5"
+                  ? "bg-white/10 text-white" 
+                  : "text-white/70 hover:bg-white/5 hover:text-white"
                 }
-                ${!sidebarOpen && "justify-center"}
               `}
             >
-              <span className={`${isActive ? "text-white" : "text-white/70"}`}>
+              <span className={isActive ? "text-white" : "text-white/70"}>
                 {item.icon}
               </span>
-              {sidebarOpen && (
-                <div className="flex flex-1 items-center justify-between">
-                  <span className={`text-sm ${isActive ? "text-white" : "text-white/80"}`}>
-                    {item.name}
-                  </span>
-                  {item.badge && (
-                    <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs text-white/80">
-                      {item.badge}
-                    </span>
-                  )}
-                </div>
+              <span className="text-sm flex-1">{item.name}</span>
+              {item.badge && (
+                <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs text-white/80">
+                  {item.badge}
+                </span>
               )}
             </Link>
           );
         })}
       </nav>
 
-      {/* Toggle Button */}
-      <button
-        onClick={toggleSidebar}
-        className="absolute -right-3 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-full bg-white/20 border border-white/10 text-white/80 hover:bg-white/30 transition"
-      >
-        {sidebarOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
-      </button>
-
       {/* User Profile */}
       <div className="border-t border-white/10 p-4">
-        <div className={`flex items-center gap-3 ${!sidebarOpen && "justify-center"}`}>
+        <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#FF6200] to-[#FFB300] text-sm font-bold text-black">
             K
           </div>
-          {sidebarOpen && (
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">Kingsley</p>
-              <p className="text-xs text-white/60 truncate">Lead Engineer</p>
-            </div>
-          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-white truncate">Kingsley</p>
+            <p className="text-xs text-white/60 truncate">Lead Engineer</p>
+          </div>
         </div>
       </div>
     </aside>

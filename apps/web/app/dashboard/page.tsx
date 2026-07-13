@@ -1,8 +1,8 @@
+// apps/web/app/dashboard/page.tsx
 "use client";
 
 import { motion } from "framer-motion";
 import DashboardStats from "@/components/dashboard/DashboardStats";
-import DashboardWelcome from "@/components/dashboard/DashboardWelcome";
 import DashboardActivity from "@/components/dashboard/DashboardActivity";
 import { AnimatedCard } from "@/components/ui/AnimatedCard";
 import { useDashboard } from "@/hooks/useDashboard";
@@ -37,12 +37,9 @@ export default function DashboardPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
-      className="space-y-8"
+      className="space-y-6"
     >
-      {/* Welcome Section */}
-      <DashboardWelcome name={stats?.user?.name || "Kingsley"} role={stats?.user?.role || "Lead Engineer"} />
-
-      {/* Stats Grid */}
+      {/* Stats Grid – directly at the top, no welcome card */}
       <DashboardStats stats={stats} />
 
       {/* Activity + Quick Actions */}
@@ -56,27 +53,15 @@ export default function DashboardPage() {
             <div className="rounded-2xl border border-[#FF6200]/20 bg-[#111111]/80 p-6 backdrop-blur-xl">
               <h3 className="text-sm font-semibold text-white">Quick Actions</h3>
               <div className="mt-4 space-y-3">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full rounded-xl bg-gradient-to-r from-[#FF6200] to-[#FFB300] px-4 py-2.5 text-sm font-medium text-black transition-all hover:shadow-[0_0_30px_rgba(255,138,0,0.3)]"
-                >
+                <button className="w-full rounded-xl bg-gradient-to-r from-[#FF6200] to-[#FFB300] px-4 py-2.5 text-sm font-medium text-black transition-all hover:shadow-[0_0_30px_rgba(255,138,0,0.3)]">
                   + New Project
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full rounded-xl border border-[#FF6200]/30 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-[#FF6200]/10"
-                >
+                </button>
+                <button className="w-full rounded-xl border border-[#FF6200]/30 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-[#FF6200]/10">
                   + New Prototype
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full rounded-xl border border-[#FF6200]/30 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-[#FF6200]/10"
-                >
+                </button>
+                <button className="w-full rounded-xl border border-[#FF6200]/30 px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-[#FF6200]/10">
                   + Submit Idea
-                </motion.button>
+                </button>
               </div>
             </div>
           </AnimatedCard>

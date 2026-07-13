@@ -1,3 +1,4 @@
+// apps/web/next.config.ts
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -8,6 +9,7 @@ const nextConfig: NextConfig = {
         hostname: "i.pinimg.com",
       },
     ],
+    qualities: [100, 75], // ✅ Allow quality 100 in addition to default 75
   },
 };
 

@@ -6,94 +6,56 @@ import { Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function UniversalSearch() {
-  const [isExpanded, setIsExpanded] = useState(false);
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsExpanded(false);
-        setQuery("");
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        setIsExpanded(true);
-        setTimeout(() => inputRef.current?.focus(), 100);
+        inputRef.current?.focus();
       }
-      if (e.key === "Escape" && isExpanded) {
-        setIsExpanded(false);
+      if (e.key === "Escape") {
         setQuery("");
         inputRef.current?.blur();
       }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isExpanded]);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
       router.push(`/dashboard/search?q=${encodeURIComponent(query)}`);
-      setIsExpanded(false);
       setQuery("");
     }
   };
 
   return (
-    <div
-      ref={containerRef}
-      className={`
-        relative flex items-center transition-all duration-300 ease-in-out
-        ${isExpanded ? "w-80 md:w-96" : "w-10"}
-      `}
-      onMouseEnter={() => setIsExpanded(true)}
-      onMouseLeave={() => {
-        if (!inputRef.current?.value) {
-          setIsExpanded(false);
-        }
-      }}
-    >
+    <div className="relative flex items-center w-full">
       <form
         onSubmit={handleSubmit}
-        className={`
+        className="
           flex items-center w-full rounded-full
           border border-white/10 bg-white/5
+          pl-4 pr-3 py-1.5
           transition-all duration-300
-          ${isExpanded ? "pl-4 pr-3 py-1.5 shadow-[0_0_30px_rgba(255,255,255,0.05)]" : "p-1.5 justify-center"}
           hover:border-white/30 focus-within:border-white/40
-        `}
+          focus-within:shadow-[0_0_30px_rgba(255,255,255,0.05)]
+        "
       >
-        <Search
-          size={18}
-          className={`
-            text-white/50 transition-all duration-300
-            ${isExpanded ? "mr-2" : ""}
-          `}
-        />
+        <Search size={18} className="mr-2 text-white/50" />
         <input
           ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search projects, papers, prototypes..."
-          className={`
-            bg-transparent text-sm text-white placeholder-white/40
-            outline-none transition-all duration-300
-            ${isExpanded ? "w-full opacity-100" : "w-0 opacity-0"}
-          `}
-          onFocus={() => setIsExpanded(true)}
+          className="w-full bg-transparent text-sm text-white placeholder-white/40 outline-none"
         />
-        {isExpanded && query && (
+        {query && (
           <button
             type="button"
             onClick={() => {
@@ -106,11 +68,6 @@ export default function UniversalSearch() {
           </button>
         )}
       </form>
-      {!isExpanded && (
-        <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-white/30 opacity-0 group-hover:opacity-100 transition">
-          ⌘K
-        </span>
-      )}
     </div>
   );
 }
