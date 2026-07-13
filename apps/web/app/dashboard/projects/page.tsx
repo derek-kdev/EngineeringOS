@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link"; // ✅ Added for navigation
 import { motion } from "framer-motion";
 import {
   Search,
@@ -137,7 +138,7 @@ export default function ProjectsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Heading – Bigger to fill top space */}
+      {/* Heading */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white">Projects</h1>
@@ -145,7 +146,7 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {/* Toolbar – slightly more spacing */}
+      {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative">
@@ -186,7 +187,7 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {/* Projects Grid – 2 columns with bigger cards to fill space */}
+      {/* Projects Grid */}
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         {filteredProjects.map((project, index) => (
           <AnimatedCard
@@ -262,9 +263,12 @@ export default function ProjectsPage() {
               </div>
 
               <div className="flex items-center gap-3 border-t border-[#FF6200]/10 pt-3">
-                <button className="rounded-lg border border-[#FF6200]/20 px-3 py-1 text-xs text-white transition hover:bg-[#FF6200]/10 hover:border-[#FF8A00]">
-                  View
-                </button>
+                {/* ✅ FIXED: "View" button now links to the detail page */}
+                <Link href={`/dashboard/projects/${project.id}`}>
+                  <button className="rounded-lg border border-[#FF6200]/20 px-3 py-1 text-xs text-white transition hover:bg-[#FF6200]/10 hover:border-[#FF8A00]">
+                    View
+                  </button>
+                </Link>
                 <button className="rounded-lg border border-[#FF6200]/20 px-3 py-1 text-xs text-white transition hover:bg-[#FF6200]/10 hover:border-[#FF8A00]">
                   Edit
                 </button>

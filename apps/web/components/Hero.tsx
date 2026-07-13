@@ -1,181 +1,52 @@
+// apps/web/components/Hero.tsx
 "use client";
 
-import { motion } from "framer-motion";
-import Link from "next/link";
+import { useState, useEffect } from "react";
+import Image from "next/image";
 
 export default function Hero() {
+  const [isExiting, setIsExiting] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsExiting(true), 5000);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <section className="relative min-h-screen overflow-hidden bg-[#0A0A0A] flex items-center justify-center">
-
-      {/* Animated orange atmosphere */}
-      <motion.div
-        className="
-          absolute
-          h-[550px]
-          w-[550px]
-          rounded-full
-          bg-[#f07b16]/20
-          blur-[160px]
-        "
-        animate={{
-          scale: [1, 1.15, 1],
-          opacity: [0.5, 0.8, 0.5],
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
-
-
-      {/* Secondary glow */}
-      <motion.div
-        className="
-          absolute
-          bottom-0
-          h-[300px]
-          w-full
-          bg-gradient-to-t
-          from-[#f07b16]/10
-          to-transparent
-        "
-        animate={{
-          opacity: [0.4, 0.8, 0.4],
-        }}
-        transition={{
-          duration: 6,
-          repeat: Infinity,
-        }}
-      />
-
-
-      {/* Hero content */}
-      <div className="relative z-10 max-w-5xl px-6 text-center">
-
-
-        <motion.h1
-          initial={{
-            opacity: 0,
-            y: 30,
-          }}
-          animate={{
-            opacity: 1,
-            y: 0,
-          }}
-          transition={{
-            duration: 0.8,
-          }}
-          className="
-            text-5xl
-            md:text-7xl
-            font-bold
-            tracking-tight
-            text-white
-          "
-        >
-          Engineering intelligence.
-          <br />
-          Built into one platform.
-        </motion.h1>
-
-
-        <motion.p
-          initial={{
-            opacity: 0,
-            y: 20,
-          }}
-          animate={{
-            opacity: 1,
-            y: 0,
-          }}
-          transition={{
-            delay: 0.2,
-            duration: 0.8,
-          }}
-          className="
-            mx-auto
-            mt-6
-            max-w-2xl
-            text-lg
-            text-zinc-400
-          "
-        >
-          EngineeringOS connects design, simulation,
-          calculation, AI assistance and collaboration
-          into one intelligent engineering ecosystem.
-        </motion.p>
-
-
-        <motion.div
-          initial={{
-            opacity: 0,
-            y: 20,
-          }}
-          animate={{
-            opacity: 1,
-            y: 0,
-          }}
-          transition={{
-            delay: 0.4,
-            duration: 0.8,
-          }}
-          className="mt-10 flex justify-center gap-4"
-        >
-
-          <Link
-            href="/signup"
-            className="
-              rounded-lg
-              bg-[#f07b16]
-              px-8
-              py-4
-              font-semibold
-              text-white
-              shadow-[0_0_40px_rgba(240,123,22,0.35)]
-              transition
-              hover:scale-105
-            "
-          >
-            Get Started
-          </Link>
-
-
-          <button
-            className="
-              rounded-lg
-              border
-              border-zinc-700
-              bg-zinc-900/50
-              px-8
-              py-4
-              font-semibold
-              text-white
-              transition
-              hover:border-[#f07b16]
-            "
-          >
-            Explore Platform
-          </button>
-
-        </motion.div>
-
+    <div className="relative w-screen h-screen overflow-hidden bg-[#0A0A0A]">
+      {/* Background Image */}
+      <div className="absolute inset-0 z-0">
+        <Image
+          src="/img/hero.png"
+          alt="EngineeringOS Hero"
+          fill
+          className="object-cover"
+          priority
+          quality={90}
+        />
+        {/* Dark overlay for readability */}
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
       </div>
 
-
-      {/* Subtle bottom fade */}
+      {/* Text Content */}
       <div
-        className="
-          absolute
-          bottom-0
-          h-32
-          w-full
-          bg-gradient-to-t
-          from-[#0A0A0A]
-          to-transparent
-        "
-      />
-
-    </section>
+        className={`
+          relative z-10 w-full h-full flex flex-col items-center justify-center text-white
+          transition-all duration-1000 ease-out
+          ${isExiting ? "opacity-0 -translate-y-32" : "opacity-100 translate-y-0"}
+        `}
+      >
+        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight text-center px-4">
+          Engineering intelligence.
+          <br />
+          <span className="text-[#FF6200]">Built into one platform.</span>
+        </h1>
+        <p className="mt-6 text-lg md:text-xl lg:text-2xl text-white/80 max-w-3xl text-center px-4">
+          From research to simulation, ideation to prototype — all in one
+          intelligent engineering workspace.
+        </p>
+        <div className="mt-8 h-1 w-24 mx-auto bg-gradient-to-r from-[#FF6200] to-[#FFB300] rounded-full animate-pulse" />
+      </div>
+    </div>
   );
 }

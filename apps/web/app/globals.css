@@ -3,59 +3,26 @@
 /* ---- Theme Support ---- */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* ---- Smooth Transitions ---- */
-* {
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-}
-
 /* ---- Base Styles ---- */
 body {
   background-color: #0A0A0A;
   color: #FFFFFF;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
 }
 
-.dark body {
-  background-color: #0A0A0A;
-  color: #FFFFFF;
+/* ---- Reduce default scroll momentum for "standing" feel ---- */
+html {
+  scroll-behavior: smooth;
 }
 
-/* ---- Custom Animations ---- */
-@keyframes pulse-once {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); box-shadow: 0 0 40px rgba(255, 138, 0, 0.5); }
-  100% { transform: scale(1); }
-}
-
-.animate-pulse-once {
-  animation: pulse-once 2s ease-out 1;
-}
-
-@keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(255, 98, 0, 0.2); }
-  50% { box-shadow: 0 0 60px rgba(255, 138, 0, 0.6); }
-}
-
-.glow-pulse {
-  animation: glow-pulse 3s ease-in-out infinite;
-}
-
-/* ---- Custom Orange Glow Border (viewport effect) ---- */
-.viewport-glow {
+/* ---- Make sections feel anchored ---- */
+section {
+  scroll-margin-top: 80px;
   position: relative;
 }
 
-.viewport-glow::before {
-  content: '';
-  position: fixed;
-  inset: 12px;
-  border: 1px solid rgba(255, 98, 0, 0.15);
-  border-radius: 24px;
-  pointer-events: none;
-  z-index: 9998;
-  animation: glow-pulse 4s ease-in-out infinite;
-}
-
-/* ---- Custom Scrollbar ---- */
+/* ---- Custom Scrollbar (Orange Theme) ---- */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -69,67 +36,33 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #FF8A00;
 }
-/* ---- Glow Pulse Animation (continuous) ---- */
-@keyframes glow-pulse {
-  0%, 100% {
-    opacity: 0.4;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.02);
-  }
-}
 
-.animate-glow-pulse {
+/* ---- Existing Animations (kept + improved) ---- */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(255, 98, 0, 0.2); }
+  50% { box-shadow: 0 0 60px rgba(255, 138, 0, 0.6); }
+}
+.glow-pulse {
   animation: glow-pulse 3s ease-in-out infinite;
 }
 
-/* ---- Border Glow Animation ---- */
-@keyframes border-glow {
-  0%, 100% {
-    border-color: rgba(255, 98, 0, 0.2);
-  }
-  50% {
-    border-color: rgba(255, 138, 0, 0.6);
-  }
+/* ---- Stronger "Shoot Up" Scroll Effect Support ---- */
+.reveal-section {
+  opacity: 0;
+  transform: translateY(80px) scale(0.96);
+  transition: all 1.1s cubic-bezier(0.215, 0.61, 0.355, 1);
 }
 
-.animate-border-glow {
-  animation: border-glow 4s ease-in-out infinite;
+.reveal-section.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
 }
 
-/* ---- Floating Animation ---- */
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-6px);
-  }
+/* Floating Orange Atmosphere */
+@keyframes float-glow {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-20px) scale(1.05); }
 }
-
-.animate-float {
-  animation: float 4s ease-in-out infinite;
-}
-
-/* ---- Data Stream Effect ---- */
-@keyframes data-stream {
-  0% {
-    background-position: -200% center;
-  }
-  100% {
-    background-position: 200% center;
-  }
-}
-
-.data-stream {
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 138, 0, 0.1) 50%,
-    transparent 100%
-  );
-  background-size: 200% 100%;
-  animation: data-stream 4s ease-in-out infinite;
+.animate-float-glow {
+  animation: float-glow 14s ease-in-out infinite;
 }

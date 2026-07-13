@@ -5,18 +5,48 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/providers/auth.providers";
-import { Bell, User, Settings, LogOut, ChevronDown } from "lucide-react";
+import { Bell } from "lucide-react";
 import UniversalSearch from "@/components/ui/UniversalSearch";
+import AvatarDropdown from "@/components/ui/AvatarDropdown";
 
 export default function Topbar() {
   const { user, isLoggedIn, logout } = useAuth();
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
   const lastScrollY = useRef(0);
   const ticking = useRef(false);
+  const isDev = process.env.NODE_ENV === "development";
 
+  // Fetch pending join requests count – silent fallback
+  const fetchPendingCount = async () => {
+    if (!isLoggedIn) return;
+    try {
+      const response = await fetch("/api/requests/pending/count");
+      if (!response.ok) throw new Error("API not ready");
+      const data = await response.json();
+      setPendingRequestsCount(data.count || 0);
+    } catch {
+      // Silently fallback to 0 – API not yet implemented
+      setPendingRequestsCount(0);
+      // Optional: only log in development for debugging
+      if (isDev) {
+        console.info("⚠️ Join requests API not available – using fallback 0");
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchPendingCount();
+      // Poll every 30 seconds (only if API is ready)
+      const interval = setInterval(fetchPendingCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isLoggedIn]);
+
+  // Scroll hide/show (unchanged)
   useEffect(() => {
     lastScrollY.current = window.scrollY;
 
@@ -30,12 +60,11 @@ export default function Topbar() {
 
         setScrolled(currentY > 20);
 
-        // Ignore tiny jitters; only react once scroll passes a small threshold
         if (Math.abs(delta) > 4) {
           if (delta > 0 && currentY > 80) {
-            setHidden(true); // scrolling down -> fade/slide up out of view
+            setHidden(true);
           } else if (delta < 0) {
-            setHidden(false); // scrolling up -> slide/fade back in
+            setHidden(false);
           }
           lastScrollY.current = currentY;
         }
@@ -50,7 +79,6 @@ export default function Topbar() {
 
   const handleLogout = () => {
     logout();
-    setUserMenuOpen(false);
     router.push("/");
   };
 
@@ -73,71 +101,39 @@ export default function Topbar() {
           ${scrolled ? "shadow-[0_8px_32px_rgba(0,0,0,0.4)]" : "shadow-[0_8px_32px_rgba(0,0,0,0.2)]"}
         `}
       >
-        {/* ===== Welcome (static, always visible) ===== */}
+        {/* ===== Left: Welcome / Brand ===== */}
         <div className="flex items-center overflow-hidden">
-          <span className="text-base font-semibold text-white whitespace-nowrap">
-            Welcome back, <span className="text-[#FF6200]">{user?.name || "Kingsley"}</span> 👋
-          </span>
+          {isLoggedIn && user?.name ? (
+            <span className="text-base font-semibold text-white whitespace-nowrap">
+              Welcome back, <span className="text-[#FF6200]">{user.name}</span> 👋
+            </span>
+          ) : (
+            <span className="text-base font-semibold text-white whitespace-nowrap">
+              Engineering<span className="text-[#FF6200]">OS</span>
+            </span>
+          )}
         </div>
 
-        {/* ===== Search (centered, always fully expanded) ===== */}
+        {/* ===== Center: Search ===== */}
         <div className="flex justify-center">
           <div className="w-full max-w-md">
             <UniversalSearch />
           </div>
         </div>
 
-        {/* ===== Right actions ===== */}
+        {/* ===== Right: Actions ===== */}
         <div className="flex items-center justify-end gap-1.5 flex-shrink-0">
           {isLoggedIn ? (
             <>
               <button className="relative p-2 text-white/80 hover:text-white transition">
                 <Bell size={18} />
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#FF6200] text-[10px] font-bold text-white">
-                  3
-                </span>
-              </button>
-
-              <div className="relative">
-                <button
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-1.5 rounded-full bg-white/10 p-1 pl-2 pr-1.5 border border-white/10 hover:border-white/30 transition"
-                >
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-[#FF6200] to-[#FFB300] text-xs font-bold text-black shadow-lg shadow-[#FF6200]/25">
-                    {user?.name?.charAt(0) || "U"}
-                  </div>
-                  <ChevronDown size={14} className="text-white/70" />
-                </button>
-
-                {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-white/10 bg-white/10 backdrop-blur-2xl p-2 shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
-                    <div className="px-3 py-2 border-b border-white/10">
-                      <p className="text-sm font-medium text-white">{user?.name}</p>
-                      <p className="text-xs text-white/60">{user?.email}</p>
-                    </div>
-                    <Link
-                      href="/dashboard/profile"
-                      className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
-                      onClick={() => setUserMenuOpen(false)}
-                    >
-                      <User size={16} /> Profile
-                    </Link>
-                    <Link
-                      href="/dashboard/settings"
-                      className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white transition"
-                      onClick={() => setUserMenuOpen(false)}
-                    >
-                      <Settings size={16} /> Workspace Settings
-                    </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 transition"
-                    >
-                      <LogOut size={16} /> Logout
-                    </button>
-                  </div>
+                {pendingRequestsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 min-w-[1rem] items-center justify-center rounded-full bg-[#FF6200] text-[10px] font-bold text-white px-0.5">
+                    {pendingRequestsCount > 99 ? "99+" : pendingRequestsCount}
+                  </span>
                 )}
-              </div>
+              </button>
+              <AvatarDropdown user={user} onLogout={handleLogout} />
             </>
           ) : (
             <>
