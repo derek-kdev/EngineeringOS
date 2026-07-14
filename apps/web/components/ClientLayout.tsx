@@ -3,7 +3,6 @@
 
 import { usePathname } from "next/navigation";
 import Topbar from "./Topbar";
-import LandingTopbar from "./LandingTopbar";
 import Footer from "./Footer";
 
 export default function ClientLayout({
@@ -12,24 +11,22 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+
   const isAuthPage = pathname === "/signin" || pathname === "/signup";
-  const isDashboard = pathname?.startsWith("/dashboard");
+  const isLandingPage = pathname === "/" || pathname === "/landing";
+
+  let mainClassName = "min-h-screen";
+  if (!isAuthPage && !isLandingPage) {
+    mainClassName = "min-h-screen pt-20 pb-16";
+  }
 
   return (
     <>
-      {!isAuthPage && (isDashboard ? <Topbar /> : <LandingTopbar />)}
-      <main
-        className={
-          isAuthPage
-            ? "min-h-screen"
-            : isDashboard
-              ? "min-h-screen pt-20 pb-16"
-              : "min-h-screen pt-24 pb-16"
-        }
-      >
-        {children}
-      </main>
-      {!isAuthPage && <Footer />}
+      {/* Skip global Topbar on auth and landing pages */}
+      {!isAuthPage && !isLandingPage && <Topbar />}
+      <main className={mainClassName}>{children}</main>
+      {/* Skip global Footer on auth and landing pages */}
+      {!isAuthPage && !isLandingPage && <Footer />}
     </>
   );
 }
