@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import { Globe, GitBranch, Link2, Key, Trash2 } from "lucide-react";
+import { createDecipheriv } from "crypto";
 
 // Inline GitHub SVG (same as footer)
 const GitHubIcon = ({ size = 18 }: { size?: number }) => (
@@ -132,4 +133,4 @@ export default function ConnectedAccountsTab() {
       </div>
     </div>
   );
-}
+}createDecipheriv

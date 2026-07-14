@@ -4,14 +4,18 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useIdeasStore } from "@/stores/ideas";
+import { useAuth } from "@/providers/auth.providers";
 import { ArrowLeft, MessageSquare, User, Calendar, ExternalLink } from "lucide-react";
 import VoteButton from "@/components/ideas/VoteButton";
 import IdeaStatusBadge from "@/components/ideas/IdeaStatusBadge";
 import CommentSection from "@/components/ideas/CommentSection";
+import JoinRequestButton from "@/components/join/JoinRequestButton";
+import PendingRequestsPanel from "@/components/join/PendingRequestsPanel";
 
 export default function IdeaDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
   const { selectedIdea, fetchIdeaById, promoteToProject } = useIdeasStore();
   const [isLoading, setIsLoading] = useState(true);
 
@@ -31,6 +35,10 @@ export default function IdeaDetailPage() {
   }
 
   const idea = selectedIdea;
+  // Determine if the current user is the creator of this idea
+  // In a real app, you'd fetch the creatorId from the idea object
+  // For now, we'll use a mock creatorId from the idea data
+  const isCreator = user?.id === idea.creatorId;
 
   return (
     <div className="space-y-6">
@@ -90,20 +98,37 @@ export default function IdeaDetailPage() {
               ))}
             </div>
 
-            {/* Admin Actions */}
-            {idea.status !== "in_progress" && idea.status !== "implemented" && (
-              <div className="mt-6 flex gap-3 border-t border-[#FF6200]/10 pt-4">
+            {/* Actions row */}
+            <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-[#FF6200]/10 pt-4">
+              {/* Promote to Project (admin only) */}
+              {idea.status !== "in_progress" && idea.status !== "implemented" && (
                 <button
                   onClick={() => promoteToProject(idea.id)}
                   className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#FF6200] to-[#FFB300] px-4 py-2 text-sm font-semibold text-black transition hover:scale-[1.02]"
                 >
                   <ExternalLink size={16} /> Promote to Project
                 </button>
-              </div>
-            )}
+              )}
+
+              {/* Join Request Button – only show if user is not the creator */}
+              {!isCreator && (
+                <JoinRequestButton
+                  targetId={idea.id}
+                  targetType="idea"
+                  creatorId={idea.creatorId}
+                />
+              )}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Pending Requests Panel – only visible to the creator */}
+      {isCreator && (
+        <div className="rounded-2xl border border-[#FF6200]/20 bg-[#111111]/80 p-6 backdrop-blur-xl">
+          <PendingRequestsPanel targetId={idea.id} targetType="idea" />
+        </div>
+      )}
 
       {/* Comments */}
       <CommentSection ideaId={idea.id} comments={idea.comments} />

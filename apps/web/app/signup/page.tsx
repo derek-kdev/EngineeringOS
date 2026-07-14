@@ -2,26 +2,78 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AuthCard } from "@/components/AuthCard";
 import { motion } from "framer-motion";
 
 const BACKGROUND_IMAGE = "https://i.pinimg.com/1200x/a1/c3/47/a1c3470e2ad52e54066bf877d07e94e3.jpg";
 
 export default function SignUpPage() {
+  const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validation
     if (password !== confirmPassword) {
-      alert("Passwords do not match!");
+      setError("Passwords do not match!");
       return;
     }
-    console.log("Sign up", { fullName, email, company, password, confirmPassword, agreeTerms });
+    if (!fullName.trim() || !email.trim() || !password.trim()) {
+      setError("Please fill in all required fields.");
+      return;
+    }
+    if (!agreeTerms) {
+      setError("You must agree to the Terms of Service and Privacy Policy.");
+      return;
+    }
+
+    setError("");
+    setIsLoading(true);
+    setSuccess(false);
+
+    try {
+      // 🔄 Replace this URL with your actual backend sign-up endpoint
+      const response = await fetch("http://localhost:3001/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName,
+          email,
+          password,
+          company,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Sign‑up failed. Please try again.");
+      }
+
+      // Success
+      setSuccess(true);
+      setIsLoading(false);
+
+      // Optionally auto‑login (if endpoint returns a token)
+      // If you have auto‑login, you can store token and redirect to dashboard
+      // Otherwise, redirect to sign in after a delay
+      setTimeout(() => {
+        router.push("/signin");
+      }, 2000);
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred.");
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -182,18 +234,32 @@ export default function SignUpPage() {
             </label>
           </div>
 
+          {/* Error & success messages */}
+          {error && (
+            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-400">
+              ✅ Account created successfully! Redirecting to sign in...
+            </div>
+          )}
+
           <button
             type="submit"
-            className="
+            disabled={isLoading}
+            className={`
               w-full rounded-full
               bg-gradient-to-r from-[#FF6200] to-[#FFB300]
               px-6 py-3.5 text-sm font-semibold text-black
               transition-all duration-300
               hover:scale-[1.02] hover:shadow-[0_0_40px_rgba(255,138,0,0.4)]
               active:scale-95
-            "
+              ${isLoading ? "opacity-70 cursor-not-allowed" : ""}
+            `}
           >
-            Launch Workspace →
+            {isLoading ? "Creating account..." : "Launch Workspace →"}
           </button>
         </form>
 
