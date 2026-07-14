@@ -8,10 +8,15 @@ import {
   HttpCode,
   HttpStatus,
   ParseUUIDPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UserProfileDto } from './dto/user-profile.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { SafeUser } from '../common/security/safe-user.interface';
+import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 
 @ApiTags('Users')
@@ -26,6 +31,26 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'User not found' })
   async findById(@Param('id', ParseUUIDPipe) id: string): Promise<SafeUser> {
     return this.usersService.findById(id);
+  }
+
+  @Patch('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Update own profile' })
+  @ApiResponse({ status: 200, type: UserProfileDto })
+  async updateOwn(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: UpdateUserDto,
+  ): Promise<UserProfileDto> {
+    return this.usersService.update(user.id, dto);
+  }
+
+  @Delete('me')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Soft delete own account' })
+  @ApiResponse({ status: 204, description: 'Account deleted' })
+  async removeOwn(@CurrentUser() user: AuthenticatedUser): Promise<void> {
+    await this.usersService.softDelete(user.id);
   }
 
   @Patch(':id')

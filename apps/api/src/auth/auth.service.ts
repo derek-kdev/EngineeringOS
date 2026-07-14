@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   Injectable,
   UnauthorizedException,
@@ -9,6 +12,7 @@ import { randomBytes } from 'crypto';
 import { UsersService } from '../users/user.service';
 import { PasswordService } from '../common/security/password.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { SessionsService } from '../sessions/sessions.service';
 import {
   LoginDto,
   RegisterDto,
@@ -27,12 +31,13 @@ export class AuthService {
     private readonly passwordService: PasswordService,
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
+    private readonly sessionsService: SessionsService,
   ) {}
 
   // ─── Registration ────────────────────────────────────────────────────
 
   async register(dto: RegisterDto): Promise<{ user: any; tokens: AuthTokens }> {
-    const passwordHash = await this.passwordService.hash(dto.password!);
+    const passwordHash = await this.passwordService.hash(dto.password);
 
     // Map organization input
     const orgInput = dto.organization?.create
@@ -44,9 +49,9 @@ export class AuthService {
       : undefined;
 
     const user = await this.usersService.create({
-      firstName: dto.firstName!,
-      lastName: dto.lastName!,
-      email: dto.email!,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      email: dto.email,
       passwordHash,
       organization: orgInput,
     });
@@ -64,28 +69,71 @@ export class AuthService {
     const tokens = await this.generateTokens(user.id, user.email);
 
     // Store refresh token in its own table
-    const refreshTokenHash = await this.passwordService.hash(tokens.refreshToken);
+    const refreshTokenHash = await this.passwordService.hash(
+      tokens.refreshToken,
+    );
     // We need to extract expiry from the refresh token JWT or use a fixed duration
     // For simplicity, we can decode the token to get exp, or set expiry based on config.
     // Here we'll use the same expiry as the JWT (7d)
     const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-    await this.usersService.createRefreshToken(user.id, refreshTokenHash, refreshExpiry);
+    await this.usersService.createRefreshToken(
+      user.id,
+      refreshTokenHash,
+      refreshExpiry,
+    );
 
     return { user, tokens };
   }
 
   // ─── Login ──────────────────────────────────────────────────────────
 
-  async login(dto: LoginDto): Promise<{ user: any; tokens: AuthTokens }> {
-    const user = await this.validateUser(dto.email!, dto.password!);
+  async login(
+    dto: LoginDto,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<{ user: any; tokens: AuthTokens }> {
+    const user = await this.validateUser(dto.email, dto.password);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const tokens = await this.generateTokens(user.id, user.email);
-    const refreshTokenHash = await this.passwordService.hash(tokens.refreshToken);
-    const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    await this.usersService.createRefreshToken(user.id, refreshTokenHash, refreshExpiry);
+    // Everything in one transaction
+    const tokens = await this.prisma.$transaction(async (tx) => {
+      // 1. Generate tokens
+      const tokens = await this.generateTokens(user.id, user.email);
+
+      // 2. Store refresh token
+      const refreshTokenHash = await this.passwordService.hash(
+        tokens.refreshToken,
+      );
+      const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      await tx.refreshToken.create({
+        data: {
+          userId: user.id,
+          tokenHash: refreshTokenHash,
+          expiresAt: refreshExpiry,
+        },
+      });
+
+      // 3. Update last login timestamp
+      await tx.user.update({
+        where: { id: user.id },
+        data: { lastLoginAt: new Date() },
+      });
+
+      // 4. Create a session record
+      const sessionExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      await tx.session.create({
+        data: {
+          userId: user.id,
+          ipAddress: ipAddress?.slice(0, 45),
+          userAgent: userAgent?.slice(0, 255),
+          expiresAt: sessionExpiry,
+        },
+      });
+
+      return tokens;
+    });
 
     return { user, tokens };
   }
@@ -95,7 +143,7 @@ export class AuthService {
   async refresh(dto: RefreshTokenDto): Promise<AuthTokens> {
     let payload: JwtPayload;
     try {
-      payload = this.jwtService.verify(dto.refreshToken!, {
+      payload = this.jwtService.verify(dto.refreshToken, {
         secret: process.env.JWT_REFRESH_SECRET,
       });
     } catch {
@@ -108,7 +156,7 @@ export class AuthService {
     }
 
     // Find the refresh token record by its hash
-    const tokenHash = await this.passwordService.hash(dto.refreshToken!);
+    const tokenHash = await this.passwordService.hash(dto.refreshToken);
     const storedToken = await this.prisma.refreshToken.findFirst({
       where: {
         tokenHash,
@@ -129,9 +177,15 @@ export class AuthService {
 
     // Generate new tokens
     const tokens = await this.generateTokens(user.id, user.email);
-    const newRefreshTokenHash = await this.passwordService.hash(tokens.refreshToken);
+    const newRefreshTokenHash = await this.passwordService.hash(
+      tokens.refreshToken,
+    );
     const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    await this.usersService.createRefreshToken(user.id, newRefreshTokenHash, refreshExpiry);
+    await this.usersService.createRefreshToken(
+      user.id,
+      newRefreshTokenHash,
+      refreshExpiry,
+    );
 
     return tokens;
   }
@@ -144,12 +198,15 @@ export class AuthService {
       where: { userId, revokedAt: null },
       data: { revokedAt: new Date() },
     });
+
+    //Revoke all active sessions for the user
+    await this.sessionsService.revokeAllSessions(userId);
   }
 
   // ─── Forgot Password ───────────────────────────────────────────────
 
   async forgotPassword(dto: ForgotPasswordDto): Promise<void> {
-    const user = await this.usersService.findByEmail(dto.email!);
+    const user = await this.usersService.findByEmail(dto.email);
     if (!user) {
       // For security, do not reveal if email exists.
       return;
@@ -158,7 +215,11 @@ export class AuthService {
     const resetToken = this.generateSecureToken();
     const tokenHash = await this.passwordService.hash(resetToken);
     const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-    await this.usersService.createPasswordResetToken(user.id, tokenHash, expiry);
+    await this.usersService.createPasswordResetToken(
+      user.id,
+      tokenHash,
+      expiry,
+    );
 
     this.sendPasswordResetEmail(user.email, resetToken);
   }
@@ -166,7 +227,7 @@ export class AuthService {
   // ─── Reset Password ────────────────────────────────────────────────
 
   async resetPassword(dto: ResetPasswordDto): Promise<void> {
-    const tokenHash = await this.passwordService.hash(dto.token!);
+    const tokenHash = await this.passwordService.hash(dto.token);
     const resetTokenRecord = await this.prisma.passwordResetToken.findFirst({
       where: {
         tokenHash,
@@ -179,8 +240,11 @@ export class AuthService {
       throw new BadRequestException('Invalid or expired reset token');
     }
 
-    const newPasswordHash = await this.passwordService.hash(dto.password!);
-    await this.usersService.updatePassword(resetTokenRecord.userId, newPasswordHash);
+    const newPasswordHash = await this.passwordService.hash(dto.password);
+    await this.usersService.updatePassword(
+      resetTokenRecord.userId,
+      newPasswordHash,
+    );
 
     // Mark token as used
     await this.prisma.passwordResetToken.update({
@@ -199,13 +263,14 @@ export class AuthService {
 
   async verifyEmailToken(token: string): Promise<void> {
     const tokenHash = await this.passwordService.hash(token);
-    const verificationRecord = await this.prisma.emailVerificationToken.findFirst({
-      where: {
-        tokenHash,
-        usedAt: null,
-        expiresAt: { gt: new Date() },
-      },
-    });
+    const verificationRecord =
+      await this.prisma.emailVerificationToken.findFirst({
+        where: {
+          tokenHash,
+          usedAt: null,
+          expiresAt: { gt: new Date() },
+        },
+      });
     if (!verificationRecord) {
       throw new BadRequestException('Invalid or expired verification token');
     }
@@ -219,7 +284,7 @@ export class AuthService {
   }
 
   async verifyEmail(dto: VerifyEmailDto): Promise<void> {
-    const user = await this.usersService.findByEmail(dto.email!);
+    const user = await this.usersService.findByEmail(dto.email);
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -241,7 +306,10 @@ export class AuthService {
     const user = await this.usersService.findByEmail(email);
     if (!user) return null;
 
-    const isMatch = await this.passwordService.compare(password, user.passwordHash);
+    const isMatch = await this.passwordService.compare(
+      password,
+      user.passwordHash,
+    );
     if (!isMatch) return null;
 
     return this.usersService.findById(user.id);

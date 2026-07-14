@@ -1,16 +1,20 @@
+/* eslint-disable prettier/prettier */
 // auth.controller.ts
 import {
   Controller,
   Post,
   Body,
   Get,
+  Req,
   Param,
   Patch,
   UseGuards,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+
 import { AuthService } from './auth.service';
+import { Request } from 'express';
 import {
   RegisterDto,
   LoginDto,
@@ -23,11 +27,16 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { AuthenticatedUser } from './interfaces/authenticated-user.interface';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { UsersService } from '../users/user.service';
+import { UserProfileDto } from '../users/dto/user-profile.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService
+  ) {}
 
   @Post('register')
   @ApiOperation({
@@ -60,8 +69,20 @@ export class AuthController {
     status: 401,
     description: 'Invalid credentials',
   })
-  async login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
+    async login(
+    @Body() dto: LoginDto,
+    @Req() req: Request,
+  ) {
+     // Get client IP – try X-Forwarded-For, then req.ip, then socket address
+    const forwarded = req.headers['x-forwarded-for'] as string | undefined;
+    const ip = forwarded
+      ? forwarded.split(',')[0].trim()
+      : req.ip || req.socket?.remoteAddress || 'unknown';
+
+    // Get user agent
+    const userAgent = req.headers['user-agent'] || 'unknown';
+
+    return this.authService.login(dto, ip, userAgent);
   }
 
   @Post('refresh')
@@ -84,6 +105,27 @@ export class AuthController {
     return this.authService.refresh(dto);
   }
 
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Get current user profile',
+    description: 'Returns the profile information of the currently authenticated user.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User profile retrieved successfully',
+    type: UserProfileDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  async getMe(
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<UserProfileDto> {
+    return this.usersService.findById(user.id);
+  }
+  
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
