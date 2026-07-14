@@ -87,10 +87,15 @@ export class AuthController {
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Logout from the application',
-    description: 'Invalidates the current authentication token.',
+  @ApiOperation({ summary: 'Logout user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully logged out',
+    schema: {
+      example: { message: 'Logged out successfully' },
+    },
   })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async logout(@CurrentUser() user: AuthenticatedUser) {
     await this.authService.logout(user.id);
     return { message: 'Logged out successfully' };
