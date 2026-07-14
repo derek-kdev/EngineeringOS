@@ -6,11 +6,11 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import compression from 'compression';
 import { json, urlencoded } from 'express';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 const logger = new Logger('Bootstrap');
 
 async function bootstrap() {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger:
       process.env.NODE_ENV === 'production'
@@ -20,7 +20,19 @@ async function bootstrap() {
 
   /* Security */
 
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", 'data:', 'validator.swagger.io'],
+          fontSrc: ["'self'", 'data:'],
+        },
+      },
+    }),
+  );
 
   const corsOrigin =
     process.env.CORS_ORIGIN?.split(',').map((origin) => origin.trim()) || [];
@@ -64,15 +76,26 @@ async function bootstrap() {
   );
 
   /* API Configuration */
-  /*  app.setGlobalPrefix('api', {
+  app.setGlobalPrefix('api', {
     exclude: ['health'],
   });
+ 
 
   app.enableVersioning({
     type: VersioningType.URI,
     defaultVersion: '1',
   });
-*/
+
+  /* Swagger Setup */
+  const config = new DocumentBuilder()
+    .setTitle('EngineeringOS API')
+    .setDescription('API documentation for EngineeringOS')
+    .setVersion('1.0')
+    .addBearerAuth() // optional, if you use JWT
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document); // accessible at /api/docs
+
   /* Validation */
   app.useGlobalPipes(
     new ValidationPipe({
