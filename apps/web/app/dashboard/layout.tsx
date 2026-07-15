@@ -1,7 +1,4 @@
-// apps/web/app/dashboard/layout.tsx
-"use client";
-
-import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
+import DashboardTopbar from "@/components/dashboard/DashboardTopbar";
 
 export default function DashboardLayout({
   children,
@@ -9,11 +6,14 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-[#0A0A0A]">
-      <DashboardSidebar />
-      <main className="flex-1 ml-64 pt-14 px-8 pb-8 overscroll-y-contain">
+    <div className="min-h-screen bg-[#050816] text-white">
+
+      <DashboardTopbar />
+
+      <main className="pt-24 px-6">
         {children}
       </main>
+
     </div>
   );
 }

@@ -1,50 +1,230 @@
-// apps/web/app/dashboard/page.tsx
 "use client";
 
-import { motion } from "framer-motion";
-import DashboardStats from "@/components/dashboard/DashboardStats";
-import DashboardActivity from "@/components/dashboard/DashboardActivity";
-import { useDashboard } from "@/hooks/useDashboard";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import api from "@/lib/api";
+
 
 export default function DashboardPage() {
-  const { stats, loading, error } = useDashboard();
+
+  const router = useRouter();
+
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+
+
+  useEffect(() => {
+
+    const loadUser = async () => {
+
+      const token =
+        localStorage.getItem("accessToken");
+
+
+      if (!token) {
+        router.push("/signin");
+        return;
+      }
+
+
+
+      try {
+
+        const response =
+          await api.get("/auth/me");
+
+
+        setUser(response.data);
+
+
+      } catch (error) {
+
+        console.error(error);
+
+        localStorage.removeItem(
+          "accessToken"
+        );
+
+        localStorage.removeItem(
+          "refreshToken"
+        );
+
+        router.push("/signin");
+
+
+      } finally {
+
+        setLoading(false);
+
+      }
+
+    };
+
+
+    loadUser();
+
+
+  }, [router]);
+
+
+
 
   if (loading) {
+
     return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <div className="relative">
-          <div className="h-16 w-16 animate-spin rounded-full border-4 border-[#FF6200] border-t-transparent" />
-          <div className="absolute inset-0 h-16 w-16 animate-pulse rounded-full bg-[#FF6200]/10 blur-2xl" />
-        </div>
-      </div>
+
+      <main
+        className="
+        min-h-screen
+        flex
+        items-center
+        justify-center
+        bg-[#0B132B]
+        text-white
+        "
+      >
+
+        Loading dashboard...
+
+      </main>
+
     );
+
   }
 
-  if (error) {
-    return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <div className="text-center text-zinc-400">
-          <p className="text-lg font-medium text-white">Failed to load dashboard</p>
-          <p className="mt-2 text-sm">{error}</p>
-        </div>
-      </div>
-    );
-  }
+
+
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.6 }}
-      className="space-y-6"
-    >
-      {/* Stats Grid – with animated counters */}
-      <DashboardStats stats={stats} />
 
-      {/* Activity Feed – Full width (no Quick Actions) */}
-      <div className="w-full">
-        <DashboardActivity activities={stats?.recentActivity} />
+    <main
+      className="
+      min-h-screen
+      bg-[#0B132B]
+      text-white
+      p-8
+      "
+    >
+
+
+      <div
+        className="
+        max-w-4xl
+        mx-auto
+        rounded-3xl
+        border
+        border-white/10
+        bg-white/5
+        backdrop-blur-xl
+        p-8
+        "
+      >
+
+
+        <h1
+          className="
+          text-4xl
+          font-bold
+          "
+        >
+
+          Welcome to EngineeringOS
+
+        </h1>
+
+
+
+        <p
+          className="
+          mt-4
+          text-white/70
+          "
+        >
+
+          Authentication is working successfully.
+
+        </p>
+
+
+
+        <div
+          className="
+          mt-8
+          space-y-3
+          "
+        >
+
+          <p>
+            <strong>Email:</strong>{" "}
+            {user?.email}
+          </p>
+
+
+          <p>
+            <strong>Name:</strong>{" "}
+            {user?.firstName}{" "}
+            {user?.lastName}
+          </p>
+
+
+          <p>
+            <strong>User ID:</strong>{" "}
+            {user?.id}
+          </p>
+
+
+          <p>
+            <strong>Email Verified:</strong>{" "}
+            {
+              user?.emailVerifiedAt
+              ? "Yes"
+              : "No"
+            }
+          </p>
+
+
+        </div>
+
+
+
+        <button
+          onClick={() => {
+
+            localStorage.removeItem(
+              "accessToken"
+            );
+
+            localStorage.removeItem(
+              "refreshToken"
+            );
+
+            router.push("/signin");
+
+          }}
+          className="
+          mt-8
+          rounded-xl
+          bg-gradient-to-r
+          from-[#FF6B00]
+          to-[#FFB000]
+          px-6
+          py-3
+          font-semibold
+          "
+        >
+
+          Logout
+
+        </button>
+
+
+
       </div>
-    </motion.div>
+
+
+    </main>
+
   );
+
 }
