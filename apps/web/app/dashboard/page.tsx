@@ -1,93 +1,85 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+
 import api from "@/lib/api";
 
 
 export default function DashboardPage() {
 
-  const router = useRouter();
 
   const [user, setUser] = useState<any>(null);
+
   const [loading, setLoading] = useState(true);
 
 
 
   useEffect(() => {
 
-    const loadUser = async () => {
 
-      const token =
-        localStorage.getItem("accessToken");
-
-
-      if (!token) {
-        router.push("/signin");
-        return;
-      }
-
+    async function loadUser() {
 
 
       try {
 
-        const response =
-          await api.get("/auth/me");
+
+        const response = await api.get("/auth/me");
 
 
         setUser(response.data);
 
 
+
       } catch (error) {
 
-        console.error(error);
 
-        localStorage.removeItem(
-          "accessToken"
+        console.error(
+          "Failed to load user:",
+          error
         );
-
-        localStorage.removeItem(
-          "refreshToken"
-        );
-
-        router.push("/signin");
 
 
       } finally {
 
+
         setLoading(false);
+
 
       }
 
-    };
+
+    }
+
 
 
     loadUser();
 
 
-  }, [router]);
+
+  }, []);
+
 
 
 
 
   if (loading) {
 
+
     return (
 
-      <main
+      <div
         className="
-        min-h-screen
-        flex
-        items-center
-        justify-center
-        bg-[#0B132B]
-        text-white
+          min-h-screen
+          flex
+          items-center
+          justify-center
+          text-white/60
         "
       >
 
         Loading dashboard...
 
-      </main>
+      </div>
 
     );
 
@@ -96,36 +88,37 @@ export default function DashboardPage() {
 
 
 
+
   return (
 
-    <main
+    <div
       className="
-      min-h-screen
-      bg-[#0B132B]
-      text-white
-      p-8
+        min-h-screen
+        text-white
       "
     >
 
 
+
       <div
         className="
-        max-w-4xl
-        mx-auto
-        rounded-3xl
-        border
-        border-white/10
-        bg-white/5
-        backdrop-blur-xl
-        p-8
+          max-w-5xl
+          mx-auto
+          rounded-3xl
+          border
+          border-white/10
+          bg-white/5
+          backdrop-blur-xl
+          p-8
         "
       >
 
 
+
         <h1
           className="
-          text-4xl
-          font-bold
+            text-4xl
+            font-bold
           "
         >
 
@@ -137,94 +130,140 @@ export default function DashboardPage() {
 
         <p
           className="
-          mt-4
-          text-white/70
+            mt-4
+            text-white/60
           "
         >
 
-          Authentication is working successfully.
+          Your engineering workspace is ready.
 
         </p>
 
 
 
+
         <div
           className="
-          mt-8
-          space-y-3
+            mt-8
+            grid
+            gap-4
+            text-sm
           "
         >
 
-          <p>
-            <strong>Email:</strong>{" "}
-            {user?.email}
-          </p>
 
 
-          <p>
-            <strong>Name:</strong>{" "}
-            {user?.firstName}{" "}
-            {user?.lastName}
-          </p>
+          <div
+            className="
+              rounded-xl
+              bg-black/20
+              p-4
+            "
+          >
+
+            <p className="text-white/40">
+              Email
+            </p>
 
 
-          <p>
-            <strong>User ID:</strong>{" "}
-            {user?.id}
-          </p>
+            <p className="mt-1">
+              {user?.email}
+            </p>
 
 
-          <p>
-            <strong>Email Verified:</strong>{" "}
-            {
-              user?.emailVerifiedAt
-              ? "Yes"
-              : "No"
-            }
-          </p>
+          </div>
+
+
+
+
+
+          <div
+            className="
+              rounded-xl
+              bg-black/20
+              p-4
+            "
+          >
+
+            <p className="text-white/40">
+              Name
+            </p>
+
+
+            <p className="mt-1">
+              {user?.firstName} {user?.lastName}
+            </p>
+
+
+          </div>
+
+
+
+
+
+          <div
+            className="
+              rounded-xl
+              bg-black/20
+              p-4
+            "
+          >
+
+            <p className="text-white/40">
+              User ID
+            </p>
+
+
+            <p className="mt-1 break-all">
+              {user?.id}
+            </p>
+
+
+          </div>
+
+
+
+
+
+          <div
+            className="
+              rounded-xl
+              bg-black/20
+              p-4
+            "
+          >
+
+            <p className="text-white/40">
+              Email Status
+            </p>
+
+
+            <p className="mt-1">
+              {
+                user?.emailVerifiedAt
+                ?
+                "Verified"
+                :
+                "Not Verified"
+              }
+            </p>
+
+
+          </div>
+
 
 
         </div>
 
 
 
-        <button
-          onClick={() => {
-
-            localStorage.removeItem(
-              "accessToken"
-            );
-
-            localStorage.removeItem(
-              "refreshToken"
-            );
-
-            router.push("/signin");
-
-          }}
-          className="
-          mt-8
-          rounded-xl
-          bg-gradient-to-r
-          from-[#FF6B00]
-          to-[#FFB000]
-          px-6
-          py-3
-          font-semibold
-          "
-        >
-
-          Logout
-
-        </button>
-
-
-
       </div>
 
 
-    </main>
+
+    </div>
 
   );
+
 
 }

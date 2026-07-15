@@ -1,46 +1,56 @@
 "use client";
 
-import { useEffect, useState } from "react";
 
-interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  displayName?: string;
-  jobTitle?: string | null;
-}
-
-export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+import { useAuthStore } from "@/stores/auth.store";
 
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
 
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-
-    setLoading(false);
-  }, []);
+export function useAuth(){
 
 
-  const logout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("user");
-
-    setUser(null);
-
-    window.location.href = "/";
-  };
+const user = useAuthStore(
+(state)=>state.user
+);
 
 
-  return {
-    user,
-    loading,
-    logout,
-  };
+
+const loading = useAuthStore(
+(state)=>state.loading
+);
+
+
+
+const login = useAuthStore(
+(state)=>state.login
+);
+
+
+
+const logout = useAuthStore(
+(state)=>state.logout
+);
+
+
+
+const isAuthenticated = useAuthStore(
+(state)=>state.isAuthenticated
+);
+
+
+
+return {
+
+user,
+
+loading,
+
+login,
+
+logout,
+
+isAuthenticated,
+
+};
+
+
 }

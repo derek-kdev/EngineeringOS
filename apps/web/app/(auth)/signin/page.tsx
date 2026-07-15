@@ -1,100 +1,86 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Eye, EyeOff, Mail } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+} from "lucide-react";
+
 import api from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 
 
-export default function SigninPage() {
+export default function SignInPage() {
 
   const router = useRouter();
 
+  const { login } = useAuth();
+
+
+  const [email, setEmail] = useState("");
+
+  const [password, setPassword] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
 
+  const [loading, setLoading] = useState(false);
 
-  const [form, setForm] = useState({
-    email: "",
-    password: "",
-  });
-
-
-  const [loading,setLoading] = useState(false);
-
-
-  const [message,setMessage] = useState("");
+  const [error, setError] = useState("");
 
 
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
-
-  };
-
-
-
-  const handleSubmit = async (
-    e: React.FormEvent
-  ) => {
+  async function handleSubmit(
+    e: React.FormEvent<HTMLFormElement>
+  ) {
 
     e.preventDefault();
 
-    setMessage("");
+
+    setError("");
+
     setLoading(true);
 
 
     try {
 
-
       const response = await api.post(
         "/auth/login",
         {
-          email: form.email,
-          password: form.password,
+          email,
+          password,
         }
       );
 
 
-
       const {
-        accessToken,
-        refreshToken
-      } = response.data.tokens;
+        user,
+        tokens,
+      } = response.data;
 
 
 
-      localStorage.setItem(
-        "accessToken",
-        accessToken
+      login(
+        user,
+        tokens.accessToken,
+        tokens.refreshToken
       );
-
-
-      localStorage.setItem(
-        "refreshToken",
-        refreshToken
-      );
-
 
 
       router.push("/dashboard");
 
 
-    } catch(error:any){
+    } catch (err: any) {
+
+      console.error(err);
 
 
-      console.error(error);
-
-
-      setMessage(
-        error.response?.data?.message ||
+      setError(
+        err?.response?.data?.message ||
         "Invalid email or password"
       );
 
@@ -105,335 +91,404 @@ export default function SigninPage() {
 
     }
 
-  };
+  }
 
 
 
+  return (
 
-return (
+    <main
+      className="
+        min-h-screen
+        flex
+        items-center
+        justify-center
+        bg-[#0B132B]
+        px-6
+        text-white
+      "
+    >
 
-<main
-className="
-min-h-screen
-bg-[#0B132B]
-flex
-items-center
-justify-center
-px-6
-text-white
-"
->
+      <div
+        className="
+          w-full
+          max-w-md
+          rounded-2xl
+          border
+          border-white/10
+          bg-white/5
+          backdrop-blur-2xl
+          p-8
+          shadow-[0_8px_32px_rgba(0,0,0,0.3)]
+        "
+      >
 
 
-<div
-className="
-absolute
-inset-0
-bg-[radial-gradient(circle_at_center,rgba(0,210,255,0.15),transparent_60%)]
-"
-/>
+        <Link
+          href="/"
+          className="
+            flex
+            items-center
+            gap-2
+            text-sm
+            text-white/60
+            hover:text-white
+            mb-8
+          "
+        >
 
+          <ArrowLeft size={16}/>
 
+          Back
 
-<div
-className="
-relative
-w-full
-max-w-md
-bg-white/5
-border
-border-white/10
-backdrop-blur-xl
-rounded-3xl
-p-8
-shadow-2xl
-"
->
+        </Link>
 
 
-<Link
-href="/"
-className="
-absolute
-top-5
-left-5
-text-white/70
-hover:text-white
-transition
-"
->
 
-<ArrowLeft size={22}/>
+        <div className="mb-8">
 
-</Link>
 
+          <h1
+            className="
+              text-3xl
+              font-bold
+            "
+          >
 
+            Welcome Back
 
-<h1
-className="
-text-3xl
-font-bold
-text-center
-mt-6
-"
->
+          </h1>
 
-Welcome Back
 
-</h1>
+          <p
+            className="
+              mt-2
+              text-white/60
+            "
+          >
 
+            Sign in to your EngineeringOS workspace.
 
-<p
-className="
-text-center
-text-white/60
-mt-2
-"
->
+          </p>
 
-Sign in to EngineeringOS
 
-</p>
+        </div>
 
 
 
-{
-message && (
 
-<div
-className="
-mt-5
-rounded-xl
-bg-red-500/20
-border
-border-red-400/30
-px-4
-py-3
-text-sm
-text-red-200
-"
->
 
-{message}
+        {error && (
 
-</div>
+          <div
+            className="
+              mb-5
+              rounded-lg
+              border
+              border-red-500/30
+              bg-red-500/10
+              px-4
+              py-3
+              text-sm
+              text-red-300
+            "
+          >
 
-)
+            {error}
 
-}
+          </div>
 
+        )}
 
 
-<form
-onSubmit={handleSubmit}
-className="
-mt-6
-space-y-5
-"
->
 
 
-<div>
 
-<label className="text-sm">
-Email
-</label>
 
 
-<div
-className="
-mt-2
-flex
-items-center
-gap-3
-bg-black/20
-border
-border-white/10
-rounded-xl
-px-4
-"
->
+        <form
+          onSubmit={handleSubmit}
+          className="
+            space-y-5
+          "
+        >
 
-<Mail size={18}/>
 
 
-<input
+          <div>
 
-name="email"
 
-type="email"
+            <label
+              className="
+                mb-2
+                block
+                text-sm
+                text-white/70
+              "
+            >
 
-required
+              Email
 
-value={form.email}
+            </label>
 
-onChange={handleChange}
 
-className="
-bg-transparent
-outline-none
-w-full
-py-3
-"
-/>
 
+            <div
+              className="
+                relative
+              "
+            >
 
-</div>
+              <Mail
+                size={18}
+                className="
+                  absolute
+                  left-3
+                  top-1/2
+                  -translate-y-1/2
+                  text-[#00D2FF]
+                "
+              />
 
 
-</div>
+              <input
 
+                type="email"
 
+                value={email}
 
+                onChange={(e)=>setEmail(e.target.value)}
 
-<div>
+                placeholder="you@example.com"
 
-<label className="text-sm">
-Password
-</label>
+                required
 
+                className="
+                  w-full
+                  rounded-xl
+                  border
+                  border-white/10
+                  bg-black/20
+                  py-3
+                  pl-10
+                  pr-4
+                  outline-none
+                  focus:border-[#00D2FF]
+                "
 
-<div
-className="
-mt-2
-flex
-items-center
-bg-black/20
-border
-border-white/10
-rounded-xl
-px-4
-"
->
+              />
 
+            </div>
 
-<input
 
-name="password"
+          </div>
 
-type={
-showPassword
-?
-"text"
-:
-"password"
-}
 
-required
 
-value={form.password}
 
-onChange={handleChange}
 
-className="
-bg-transparent
-outline-none
-w-full
-py-3
-"
-/>
 
 
-<button
+          <div>
 
-type="button"
 
-onClick={()=>
-setShowPassword(!showPassword)
-}
+            <label
+              className="
+                mb-2
+                block
+                text-sm
+                text-white/70
+              "
+            >
 
->
+              Password
 
-{
-showPassword
-?
-<EyeOff size={18}/>
-:
-<Eye size={18}/>
-}
+            </label>
 
-</button>
 
 
-</div>
 
+            <div
+              className="
+                relative
+              "
+            >
 
-</div>
+              <Lock
+                size={18}
+                className="
+                  absolute
+                  left-3
+                  top-1/2
+                  -translate-y-1/2
+                  text-[#FF6B00]
+                "
+              />
 
 
 
+              <input
 
 
-<button
+                type={
+                  showPassword
+                  ? "text"
+                  : "password"
+                }
 
-disabled={loading}
 
-className="
-w-full
-rounded-xl
-py-3
-font-semibold
-bg-gradient-to-r
-from-[#FF6B00]
-to-[#FFB300]
-hover:scale-[1.02]
-transition
-"
+                value={password}
 
->
 
-{
-loading
-?
-"Signing in..."
-:
-"Sign In"
-}
+                onChange={(e)=>
+                  setPassword(e.target.value)
+                }
 
 
-</button>
+                placeholder="Enter your password"
 
 
+                required
 
-</form>
 
+                className="
+                  w-full
+                  rounded-xl
+                  border
+                  border-white/10
+                  bg-black/20
+                  py-3
+                  pl-10
+                  pr-12
+                  outline-none
+                  focus:border-[#FF6B00]
+                "
 
+              />
 
 
-<div
-className="
-mt-6
-text-center
-text-sm
-text-white/60
-"
->
 
-Don't have an account?
+              <button
 
-<Link
-href="/register"
-className="
-text-[#00D2FF]
-ml-2
-"
->
+                type="button"
 
-Create account
+                onClick={()=>
+                  setShowPassword(!showPassword)
+                }
 
-</Link>
+                className="
+                  absolute
+                  right-3
+                  top-1/2
+                  -translate-y-1/2
+                  text-white/60
+                  hover:text-white
+                "
 
+              >
 
-</div>
+                {
+                  showPassword
+                  ?
+                  <EyeOff size={18}/>
+                  :
+                  <Eye size={18}/>
+                }
 
 
+              </button>
 
-</div>
 
 
+            </div>
 
-</main>
 
-);
+          </div>
+
+
+
+
+
+          <button
+
+            disabled={loading}
+
+            type="submit"
+
+            className="
+              w-full
+              rounded-xl
+              bg-gradient-to-r
+              from-[#00D2FF]
+              to-[#FF6B00]
+              py-3
+              font-semibold
+              text-black
+              transition
+              hover:opacity-90
+              disabled:opacity-50
+            "
+
+          >
+
+            {
+              loading
+              ?
+              "Signing in..."
+              :
+              "Sign In"
+            }
+
+
+          </button>
+
+
+
+        </form>
+
+
+
+
+
+        <p
+          className="
+            mt-6
+            text-center
+            text-sm
+            text-white/60
+          "
+        >
+
+          Don't have an account?
+
+
+          <Link
+
+            href="/register"
+
+            className="
+              ml-2
+              text-[#00D2FF]
+              hover:underline
+            "
+
+          >
+
+            Create one
+
+          </Link>
+
+
+        </p>
+
+
+
+
+      </div>
+
+
+    </main>
+
+  );
 
 }

@@ -1,19 +1,29 @@
-import DashboardTopbar from "@/components/dashboard/DashboardTopbar";
+"use client";
+
+
+import DashboardShell from "@/components/dashboard/DashboardShell";
+
 
 export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
+
+children,
+
+}:{
+
+children: React.ReactNode;
+
 }) {
-  return (
-    <div className="min-h-screen bg-[#050816] text-white">
 
-      <DashboardTopbar />
 
-      <main className="pt-24 px-6">
-        {children}
-      </main>
+return (
 
-    </div>
-  );
+<DashboardShell>
+
+{children}
+
+</DashboardShell>
+
+);
+
+
 }
