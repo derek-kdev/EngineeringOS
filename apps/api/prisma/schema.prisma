@@ -15,6 +15,11 @@ datasource db {
  * |--------------------------------------------------------------------------
  */
 
+enum Role{
+  USER
+  ADMIN
+}
+
 enum OrganizationRole {
   OWNER
   ADMIN
@@ -81,6 +86,8 @@ model User {
   firstName   String
   lastName    String
   displayName String?
+
+  role Role @default(USER)
 
   avatarUrl String?
   phone     String?
