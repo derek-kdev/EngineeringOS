@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql" 
+  provider = "postgresql"
   /**
    * url = env("postgresql://engineeringos:password@localhost:5432/engineeringos?schema=public")
    */
@@ -15,7 +15,7 @@ datasource db {
  * |--------------------------------------------------------------------------
  */
 
-enum Role{
+enum Role {
   USER
   ADMIN
 }
@@ -121,6 +121,8 @@ model User {
   notifications Notification[]
 
   auditLogs AuditLog[]
+
+  accountUnlockTokens AccountUnlockToken[]
 
   createdApiKeys ApiKey[]     @relation("ApiKeyCreator")
   invitations    Invitation[]
@@ -496,4 +498,36 @@ model AuditLog {
   @@index([organizationId, createdAt])
   @@index([entity, entityId])
   @@index([userId])
+}
+
+/**
+ * |--------------------------------------------------------------------------
+ * | Rate Limiting
+ * |--------------------------------------------------------------------------
+ */
+model LoginAttempt {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  attempts    Int       @default(0)
+  lockedUntil DateTime?
+  lockCount   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([email])
+  @@index([lockedUntil])
+}
+
+model AccountUnlockToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
