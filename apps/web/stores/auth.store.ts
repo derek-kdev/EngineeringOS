@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import api from "@/lib/api";
 
 
 export interface User {
@@ -14,9 +14,29 @@ export interface User {
 
   lastName: string;
 
-  displayName?: string;
+  displayName?: string | null;
+
+  avatarUrl?: string | null;
+
+  phone?: string | null;
 
   jobTitle?: string | null;
+
+  role?: string;
+
+  locale?: string;
+
+  timezone?: string;
+
+  isActive?: boolean;
+
+  emailVerifiedAt?: string | null;
+
+  lastLoginAt?: string | null;
+
+  createdAt?: string;
+
+  updatedAt?: string;
 
 }
 
@@ -37,25 +57,41 @@ interface AuthState {
   hydrated: boolean;
 
 
-
-  setHydrated: (value:boolean)=>void;
-
+  loading: boolean;
 
 
-  login: (
 
+  setHydrated:(
+    value:boolean
+  ) => void;
+
+
+
+  setLoading:(
+    value:boolean
+  ) => void;
+
+
+
+  login:(
     user:User,
-
     accessToken:string,
-
     refreshToken:string
-
-  )=>void;
-
+  ) => void;
 
 
-  logout:()=>void;
 
+  logout:() => Promise<void>;
+
+
+
+  setUser:(
+    user:User | null
+  ) => void;
+
+
+
+  isAuthenticated:() => boolean;
 
 
 }
@@ -64,107 +100,170 @@ interface AuthState {
 
 
 
-export const useAuthStore = create<AuthState>()(
-
-  persist(
-
-    (set)=>({
-
-
-      user:null,
-
-
-      accessToken:null,
-
-
-      refreshToken:null,
-
-
-      hydrated:false,
+export const useAuthStore =
+create<AuthState>((set,get)=>({
 
 
 
-      setHydrated:(value)=>set({
+  user:null,
 
-        hydrated:value
 
-      }),
+  accessToken:null,
+
+
+  refreshToken:null,
+
+
+  hydrated:false,
+
+
+  loading:false,
 
 
 
 
-      login:(
+  setHydrated:(value)=>
 
-        user,
+    set({
 
-        accessToken,
-
-        refreshToken
-
-      )=>
-
-        set({
-
-          user,
-
-          accessToken,
-
-          refreshToken,
-
-        }),
-
-
-
-
-
-      logout:()=>{
-
-
-        set({
-
-          user:null,
-
-          accessToken:null,
-
-          refreshToken:null,
-
-        });
-
-
-
-      }
-
-
+      hydrated:value,
 
     }),
 
 
-    {
-
-
-      name:"engineeringos-auth",
 
 
 
-      onRehydrateStorage:()=>{
+  setLoading:(value)=>
+
+    set({
+
+      loading:value,
+
+    }),
 
 
-        return(state)=>{
 
 
-          state?.setHydrated(true);
 
 
-        };
+  login:(
+
+    user,
+
+    accessToken,
+
+    refreshToken,
+
+  ) =>
+
+    set({
+
+      user,
+
+      accessToken,
+
+      refreshToken,
+
+    }),
 
 
-      }
 
+
+
+
+  logout: async()=>{
+
+
+    try{
+
+
+      await api.post("/auth/logout");
+
+
+    }catch(error){
+
+
+      console.error(
+        "Logout API failed:",
+        error
+      );
 
 
     }
 
 
-  )
 
-);
+    set({
+
+      user:null,
+
+      accessToken:null,
+
+      refreshToken:null,
+
+    });
+
+
+
+    if(typeof window !== "undefined"){
+
+
+      localStorage.removeItem(
+        "engineeringos-auth"
+      );
+
+
+      localStorage.removeItem(
+        "accessToken"
+      );
+
+
+      localStorage.removeItem(
+        "refreshToken"
+      );
+
+
+      window.location.href = "/";
+
+
+    }
+
+
+  },
+
+
+
+
+
+
+  setUser:(user)=>
+
+    set({
+
+      user,
+
+    }),
+
+
+
+
+
+
+  isAuthenticated:()=>{
+
+
+    const state =
+      get();
+
+
+    return Boolean(
+      state.user
+    );
+
+
+  },
+
+
+
+}));

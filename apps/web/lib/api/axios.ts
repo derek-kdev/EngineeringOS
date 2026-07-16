@@ -8,7 +8,9 @@ const api = axios.create({
     process.env.NEXT_PUBLIC_API_URL ||
     "http://localhost:3001/api/v1",
 
+
   withCredentials: true,
+
 
   headers: {
 
@@ -18,129 +20,46 @@ const api = axios.create({
 
   },
 
+
   timeout: 30000,
 
 });
 
 
 
-/*
-|--------------------------------------------------------------------------
-| Get Access Token
-|--------------------------------------------------------------------------
-|
-| Temporary solution:
-| Reads from Zustand first.
-| Falls back to persisted Zustand storage.
-|
-|--------------------------------------------------------------------------
-*/
-
-function getAccessToken(): string | null {
-
-
-  const storeToken =
-    useAuthStore.getState().accessToken;
-
-
-  if(storeToken){
-
-    return storeToken;
-
-  }
-
-
-
-  if(typeof window !== "undefined"){
-
-
-    const storedAuth =
-      localStorage.getItem(
-        "engineeringos-auth"
-      );
-
-
-    if(storedAuth){
-
-
-      try{
-
-
-        const parsed =
-          JSON.parse(storedAuth);
-
-
-
-        return (
-          parsed?.state?.accessToken ??
-          null
-        );
-
-
-      }catch(error){
-
-
-        console.error(
-          "Failed parsing auth storage:",
-          error
-        );
-
-
-      }
-
-    }
-
-  }
-
-
-
-  return null;
-
-}
-
-
-
-
 
 
 /*
 |--------------------------------------------------------------------------
-| Request Interceptor
+| Attach JWT Access Token
 |--------------------------------------------------------------------------
 */
 
 api.interceptors.request.use(
 
-  (config)=>{
+  (config) => {
 
 
     const token =
-      getAccessToken();
+      useAuthStore.getState().accessToken;
 
 
-
-    if(token){
-
+    if (token) {
 
       config.headers.Authorization =
         `Bearer ${token}`;
 
-
     }
-
 
 
     return config;
 
-
   },
 
 
-  (error)=>{
-
+  (error) => {
 
     return Promise.reject(error);
-
 
   }
 
@@ -150,20 +69,18 @@ api.interceptors.request.use(
 
 
 
-
-
 /*
 |--------------------------------------------------------------------------
-| Response Error Handler
+| Response Error Logging
 |--------------------------------------------------------------------------
 */
 
 api.interceptors.response.use(
 
-  (response)=>response,
+  (response) => response,
 
 
-  (error)=>{
+  (error) => {
 
 
     console.error(
@@ -185,7 +102,6 @@ api.interceptors.response.use(
 
 
     return Promise.reject(error);
-
 
   }
 

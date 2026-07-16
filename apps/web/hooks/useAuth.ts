@@ -1,56 +1,73 @@
 "use client";
 
-
 import { useAuthStore } from "@/stores/auth.store";
 
+export function useAuth() {
+  const user = useAuthStore(
+    (state) => state.user,
+  );
 
+  const accessToken = useAuthStore(
+    (state) => state.accessToken,
+  );
 
-export function useAuth(){
+  const refreshToken = useAuthStore(
+    (state) => state.refreshToken,
+  );
 
+  const loading = useAuthStore(
+    (state) => state.loading,
+  );
 
-const user = useAuthStore(
-(state)=>state.user
-);
+  const hydrated = useAuthStore(
+    (state) => state.hydrated,
+  );
 
+  const login = useAuthStore(
+    (state) => state.login,
+  );
 
+  const logout = useAuthStore(
+    (state) => state.logout,
+  );
 
-const loading = useAuthStore(
-(state)=>state.loading
-);
+  const setUser = useAuthStore(
+    (state) => state.setUser,
+  );
 
+  const setLoading = useAuthStore(
+    (state) => state.setLoading,
+  );
 
+  const setHydrated = useAuthStore(
+    (state) => state.setHydrated,
+  );
 
-const login = useAuthStore(
-(state)=>state.login
-);
+  const isAuthenticated = useAuthStore(
+    (state) => state.isAuthenticated,
+  );
 
+  return {
+    user,
 
+    accessToken,
 
-const logout = useAuthStore(
-(state)=>state.logout
-);
+    refreshToken,
 
+    hydrated,
 
+    loading,
 
-const isAuthenticated = useAuthStore(
-(state)=>state.isAuthenticated
-);
+    login,
 
+    logout,
 
+    setUser,
 
-return {
+    setLoading,
 
-user,
+    setHydrated,
 
-loading,
-
-login,
-
-logout,
-
-isAuthenticated,
-
-};
-
-
+    isAuthenticated,
+  };
 }

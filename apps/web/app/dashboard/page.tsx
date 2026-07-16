@@ -1,269 +1,75 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 import api from "@/lib/api";
-
+import { useAuth } from "@/hooks/useAuth";
 
 export default function DashboardPage() {
+  const router = useRouter();
 
-
-  const [user, setUser] = useState<any>(null);
-
-  const [loading, setLoading] = useState(true);
-
-
+  const {
+    user,
+    loading,
+    setLoading,
+    setUser,
+    logout,
+  } = useAuth();
 
   useEffect(() => {
-
-
-    async function loadUser() {
-
+    async function loadProfile() {
+      setLoading(true);
 
       try {
-
-
         const response = await api.get("/auth/me");
 
-
         setUser(response.data);
-
-
-
       } catch (error) {
+        console.error("Failed to load authenticated user", error);
 
+        logout();
 
-        console.error(
-          "Failed to load user:",
-          error
-        );
-
-
+        router.replace("/signin");
       } finally {
-
-
         setLoading(false);
-
-
       }
-
-
     }
 
-
-
-    loadUser();
-
-
-
-  }, []);
-
-
-
-
+    loadProfile();
+  }, [logout, router, setLoading, setUser]);
 
   if (loading) {
-
-
     return (
-
-      <div
-        className="
-          min-h-screen
-          flex
-          items-center
-          justify-center
-          text-white/60
-        "
-      >
-
-        Loading dashboard...
-
-      </div>
-
+      <main className="min-h-screen flex items-center justify-center bg-[#0B132B] text-white">
+        <p className="text-lg">Loading dashboard...</p>
+      </main>
     );
-
   }
 
-
-
-
+  if (!user) {
+    return null;
+  }
 
   return (
+    <main className="min-h-screen bg-[#0B132B] text-white p-10">
+      <h1 className="text-4xl font-bold">
+        Welcome, {user.firstName}
+      </h1>
 
-    <div
-      className="
-        min-h-screen
-        text-white
-      "
-    >
+      <p className="mt-2 text-white/70">
+        {user.email}
+      </p>
 
+      <div className="mt-8 rounded-xl border border-white/10 bg-white/5 p-6">
+        <h2 className="text-xl font-semibold">
+          Dashboard
+        </h2>
 
-
-      <div
-        className="
-          max-w-5xl
-          mx-auto
-          rounded-3xl
-          border
-          border-white/10
-          bg-white/5
-          backdrop-blur-xl
-          p-8
-        "
-      >
-
-
-
-        <h1
-          className="
-            text-4xl
-            font-bold
-          "
-        >
-
-          Welcome to EngineeringOS
-
-        </h1>
-
-
-
-        <p
-          className="
-            mt-4
-            text-white/60
-          "
-        >
-
-          Your engineering workspace is ready.
-
+        <p className="mt-2 text-white/60">
+          Authentication is working successfully.
         </p>
-
-
-
-
-        <div
-          className="
-            mt-8
-            grid
-            gap-4
-            text-sm
-          "
-        >
-
-
-
-          <div
-            className="
-              rounded-xl
-              bg-black/20
-              p-4
-            "
-          >
-
-            <p className="text-white/40">
-              Email
-            </p>
-
-
-            <p className="mt-1">
-              {user?.email}
-            </p>
-
-
-          </div>
-
-
-
-
-
-          <div
-            className="
-              rounded-xl
-              bg-black/20
-              p-4
-            "
-          >
-
-            <p className="text-white/40">
-              Name
-            </p>
-
-
-            <p className="mt-1">
-              {user?.firstName} {user?.lastName}
-            </p>
-
-
-          </div>
-
-
-
-
-
-          <div
-            className="
-              rounded-xl
-              bg-black/20
-              p-4
-            "
-          >
-
-            <p className="text-white/40">
-              User ID
-            </p>
-
-
-            <p className="mt-1 break-all">
-              {user?.id}
-            </p>
-
-
-          </div>
-
-
-
-
-
-          <div
-            className="
-              rounded-xl
-              bg-black/20
-              p-4
-            "
-          >
-
-            <p className="text-white/40">
-              Email Status
-            </p>
-
-
-            <p className="mt-1">
-              {
-                user?.emailVerifiedAt
-                ?
-                "Verified"
-                :
-                "Not Verified"
-              }
-            </p>
-
-
-          </div>
-
-
-
-        </div>
-
-
-
       </div>
-
-
-
-    </div>
-
+    </main>
   );
-
-
 }

@@ -2,34 +2,37 @@
 
 
 import {
-  createContext,
-  useContext,
+createContext,
+useContext,
 } from "react";
 
 
 import {
-  useAuthStore
+useAuthStore
 } from "@/stores/auth.store";
 
 
 
-const AuthContext = createContext<any>(null);
+const AuthContext =
+createContext<any>(null);
+
+
 
 
 
 export function AuthProvider({
 
-children
+children,
 
 }:{
 
-children:React.ReactNode
+children:React.ReactNode;
 
-}) {
+}){
 
 
-
-const auth = useAuthStore();
+const auth =
+useAuthStore();
 
 
 
@@ -52,8 +55,6 @@ return (
 
 export function useAuth(){
 
-
 return useContext(AuthContext);
-
 
 }

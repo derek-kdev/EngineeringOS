@@ -1,8 +1,19 @@
 "use client";
 
-import { useState } from "react";
+
+import {
+  useState,
+} from "react";
+
+
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+
+
+import {
+  useRouter,
+} from "next/navigation";
+
+
 import {
   ArrowLeft,
   Eye,
@@ -11,34 +22,87 @@ import {
   Lock,
 } from "lucide-react";
 
+
 import api from "@/lib/api";
-import { useAuth } from "@/hooks/useAuth";
 
 
-export default function SignInPage() {
-
-  const router = useRouter();
-
-  const { login } = useAuth();
+import {
+  useAuth,
+} from "@/hooks/useAuth";
 
 
-  const [email, setEmail] = useState("");
 
-  const [password, setPassword] = useState("");
 
-  const [showPassword, setShowPassword] = useState(false);
 
-  const [loading, setLoading] = useState(false);
+export default function SignInPage(){
 
-  const [error, setError] = useState("");
+
+  const router =
+  useRouter();
+
+
+
+  const {
+    login,
+  } =
+  useAuth();
+
+
+
+
+
+  const [
+    email,
+    setEmail,
+  ] =
+  useState("");
+
+
+
+  const [
+    password,
+    setPassword,
+  ] =
+  useState("");
+
+
+
+  const [
+    showPassword,
+    setShowPassword,
+  ] =
+  useState(false);
+
+
+
+  const [
+    loading,
+    setLoading,
+  ] =
+  useState(false);
+
+
+
+  const [
+    error,
+    setError,
+  ] =
+  useState("");
+
+
+
+
+
 
 
 
   async function handleSubmit(
-    e: React.FormEvent<HTMLFormElement>
-  ) {
+    e:React.FormEvent<HTMLFormElement>
+  ){
+
 
     e.preventDefault();
+
 
 
     setError("");
@@ -46,58 +110,142 @@ export default function SignInPage() {
     setLoading(true);
 
 
-    try {
 
-      const response = await api.post(
+
+    try{
+
+
+      const response =
+      await api.post(
+
         "/auth/login",
+
         {
+
           email,
+
           password,
+
         }
+
       );
 
 
-      const {
-        user,
-        tokens,
-      } = response.data;
+
+
+
+
+      const user =
+      response.data.user;
+
+
+
+      const accessToken =
+      response.data.tokens.accessToken;
+
+
+
+      const refreshToken =
+      response.data.tokens.refreshToken;
+
+
+
+
+
+
+
+      if(
+        !user ||
+        !accessToken ||
+        !refreshToken
+      ){
+
+        throw new Error(
+          "Invalid login response"
+        );
+
+      }
+
+
+
+
 
 
 
       login(
+
         user,
-        tokens.accessToken,
-        tokens.refreshToken
+
+        accessToken,
+
+        refreshToken,
+
       );
 
 
-      router.push("/dashboard");
 
 
-    } catch (err: any) {
-
-      console.error(err);
 
 
-      setError(
-        err?.response?.data?.message ||
-        "Invalid email or password"
+      router.replace(
+        "/dashboard"
       );
 
 
-    } finally {
 
-      setLoading(false);
 
     }
 
+    catch(error:any){
+
+
+
+      console.error(
+        "Login error:",
+        error
+      );
+
+
+
+
+      setError(
+
+        error?.response?.data?.message ||
+
+        "Invalid email or password"
+
+      );
+
+
+
+    }
+
+
+
+    finally{
+
+
+      setLoading(false);
+
+
+    }
+
+
+
   }
+
+
+
+
+
+
 
 
 
   return (
 
     <main
+
       className="
         min-h-screen
         flex
@@ -107,9 +255,13 @@ export default function SignInPage() {
         px-6
         text-white
       "
+
     >
 
+
+
       <div
+
         className="
           w-full
           max-w-md
@@ -117,15 +269,21 @@ export default function SignInPage() {
           border
           border-white/10
           bg-white/5
-          backdrop-blur-2xl
+          backdrop-blur-xl
           p-8
-          shadow-[0_8px_32px_rgba(0,0,0,0.3)]
+          shadow-xl
         "
+
       >
 
 
+
+
+
         <Link
+
           href="/"
+
           className="
             flex
             items-center
@@ -135,6 +293,7 @@ export default function SignInPage() {
             hover:text-white
             mb-8
           "
+
         >
 
           <ArrowLeft size={16}/>
@@ -145,60 +304,78 @@ export default function SignInPage() {
 
 
 
-        <div className="mb-8">
-
-
-          <h1
-            className="
-              text-3xl
-              font-bold
-            "
-          >
-
-            Welcome Back
-
-          </h1>
-
-
-          <p
-            className="
-              mt-2
-              text-white/60
-            "
-          >
-
-            Sign in to your EngineeringOS workspace.
-
-          </p>
-
-
-        </div>
 
 
 
 
 
-        {error && (
+        <h1
 
-          <div
-            className="
-              mb-5
-              rounded-lg
-              border
-              border-red-500/30
-              bg-red-500/10
-              px-4
-              py-3
-              text-sm
-              text-red-300
-            "
-          >
+          className="
+            text-3xl
+            font-bold
+          "
 
-            {error}
+        >
 
-          </div>
+          Welcome Back
 
-        )}
+        </h1>
+
+
+
+
+
+        <p
+
+          className="
+            mt-2
+            mb-8
+            text-white/60
+          "
+
+        >
+
+          Sign in to your EngineeringOS workspace.
+
+        </p>
+
+
+
+
+
+
+
+
+
+
+        {
+          error && (
+
+            <div
+
+              className="
+                mb-5
+                rounded-lg
+                border
+                border-red-500/30
+                bg-red-500/10
+                px-4
+                py-3
+                text-sm
+                text-red-300
+              "
+
+            >
+
+              {error}
+
+            </div>
+
+          )
+        }
+
+
 
 
 
@@ -207,11 +384,18 @@ export default function SignInPage() {
 
 
         <form
+
           onSubmit={handleSubmit}
+
           className="
             space-y-5
           "
+
         >
+
+
+
+
 
 
 
@@ -219,12 +403,14 @@ export default function SignInPage() {
 
 
             <label
+
               className="
-                mb-2
                 block
+                mb-2
                 text-sm
                 text-white/70
               "
+
             >
 
               Email
@@ -233,14 +419,22 @@ export default function SignInPage() {
 
 
 
+
+
             <div
+
               className="
                 relative
               "
+
             >
 
+
+
               <Mail
+
                 size={18}
+
                 className="
                   absolute
                   left-3
@@ -248,20 +442,34 @@ export default function SignInPage() {
                   -translate-y-1/2
                   text-[#00D2FF]
                 "
+
               />
+
+
+
 
 
               <input
 
+
                 type="email"
+
 
                 value={email}
 
-                onChange={(e)=>setEmail(e.target.value)}
+
+                onChange={
+                  (e)=>
+                  setEmail(e.target.value)
+                }
+
+
+                required
+
 
                 placeholder="you@example.com"
 
-                required
+
 
                 className="
                   w-full
@@ -276,7 +484,10 @@ export default function SignInPage() {
                   focus:border-[#00D2FF]
                 "
 
+
               />
+
+
 
             </div>
 
@@ -289,33 +500,82 @@ export default function SignInPage() {
 
 
 
+
+
           <div>
 
 
-            <label
+            <div
+
               className="
+                flex
+                items-center
+                justify-between
                 mb-2
-                block
-                text-sm
-                text-white/70
               "
+
             >
 
-              Password
 
-            </label>
+              <label
+
+                className="
+                  text-sm
+                  text-white/70
+                "
+
+              >
+
+                Password
+
+              </label>
+
+
+
+
+
+              <Link
+
+                href="/forgot-password"
+
+                className="
+                  text-xs
+                  text-[#00D2FF]
+                  hover:underline
+                "
+
+              >
+
+                Forgot password?
+
+              </Link>
+
+
+
+            </div>
+
+
+
 
 
 
 
             <div
+
               className="
                 relative
               "
+
             >
 
+
+
+
+
               <Lock
+
                 size={18}
+
                 className="
                   absolute
                   left-3
@@ -323,7 +583,12 @@ export default function SignInPage() {
                   -translate-y-1/2
                   text-[#FF6B00]
                 "
+
               />
+
+
+
+
 
 
 
@@ -332,23 +597,32 @@ export default function SignInPage() {
 
                 type={
                   showPassword
-                  ? "text"
-                  : "password"
+                  ?
+                  "text"
+                  :
+                  "password"
                 }
+
 
 
                 value={password}
 
 
-                onChange={(e)=>
+
+                onChange={
+                  (e)=>
                   setPassword(e.target.value)
                 }
+
+
+
+                required
+
 
 
                 placeholder="Enter your password"
 
 
-                required
 
 
                 className="
@@ -364,7 +638,15 @@ export default function SignInPage() {
                   focus:border-[#FF6B00]
                 "
 
+
+
               />
+
+
+
+
+
+
 
 
 
@@ -372,9 +654,12 @@ export default function SignInPage() {
 
                 type="button"
 
-                onClick={()=>
-                  setShowPassword(!showPassword)
+                onClick={
+                  ()=>setShowPassword(
+                    !showPassword
+                  )
                 }
+
 
                 className="
                   absolute
@@ -382,10 +667,11 @@ export default function SignInPage() {
                   top-1/2
                   -translate-y-1/2
                   text-white/60
-                  hover:text-white
                 "
 
               >
+
+
 
                 {
                   showPassword
@@ -396,7 +682,9 @@ export default function SignInPage() {
                 }
 
 
+
               </button>
+
 
 
 
@@ -409,11 +697,19 @@ export default function SignInPage() {
 
 
 
+
+
+
+
           <button
+
+
+            type="submit"
+
 
             disabled={loading}
 
-            type="submit"
+
 
             className="
               w-full
@@ -424,12 +720,13 @@ export default function SignInPage() {
               py-3
               font-semibold
               text-black
-              transition
-              hover:opacity-90
               disabled:opacity-50
             "
 
+
           >
+
+
 
             {
               loading
@@ -440,7 +737,11 @@ export default function SignInPage() {
             }
 
 
+
+
           </button>
+
+
 
 
 
@@ -450,13 +751,19 @@ export default function SignInPage() {
 
 
 
+
+
+
+
         <p
+
           className="
             mt-6
             text-center
             text-sm
             text-white/60
           "
+
         >
 
           Don't have an account?
@@ -484,11 +791,14 @@ export default function SignInPage() {
 
 
 
+
       </div>
+
 
 
     </main>
 
   );
+
 
 }

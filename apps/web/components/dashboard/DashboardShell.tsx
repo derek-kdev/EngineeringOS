@@ -1,12 +1,21 @@
 "use client";
 
-
 import { useState } from "react";
 
 
 import DashboardSidebar from "./DashboardSidebar";
 import DashboardTopbar from "./DashboardTopbar";
 import DashboardFooter from "./DashboardFooter";
+import UserPanel from "./panels/UserPanel";
+
+
+
+type UserPanelType =
+  | "profile"
+  | "preferences"
+  | "security"
+  | "workspace"
+  | null;
 
 
 
@@ -22,7 +31,14 @@ export default function DashboardShell({
 
 
 
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] =
+    useState(false);
+
+
+
+  const [activePanel, setActivePanel] =
+    useState<UserPanelType>(null);
+
 
 
 
@@ -62,6 +78,7 @@ export default function DashboardShell({
 
 
 
+
       {/* DARK OVERLAY */}
 
       <div
@@ -73,6 +90,7 @@ export default function DashboardShell({
         "
 
       />
+
 
 
 
@@ -92,6 +110,8 @@ export default function DashboardShell({
 
 
 
+
+
         {/* SIDEBAR */}
 
         <DashboardSidebar
@@ -105,13 +125,48 @@ export default function DashboardShell({
 
 
 
+
+
+
         {/* TOPBAR */}
 
         <DashboardTopbar
 
           expanded={expanded}
 
+          onOpenPanel={
+            setActivePanel
+          }
+
         />
+
+
+
+
+
+
+
+
+        {/* USER PANEL OVERLAY */}
+
+        {
+          activePanel && (
+
+            <UserPanel
+
+              panel={activePanel}
+
+              onClose={() =>
+                setActivePanel(null)
+              }
+
+            />
+
+          )
+        }
+
+
+
 
 
 
@@ -160,12 +215,17 @@ export default function DashboardShell({
 
 
 
+
+
+
         {/* FOOTER */}
 
         <DashboardFooter />
 
 
+
       </div>
+
 
 
     </div>
