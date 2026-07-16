@@ -70,7 +70,7 @@ export class CreateUserDto {
 
   @ApiProperty({
     description: 'User email address',
-    example: 'john.doe@example.com',
+    example: 'engineeringos@dev.com',
     format: 'email',
   })
   @IsEmail()
@@ -80,7 +80,7 @@ export class CreateUserDto {
     description:
       'Hashed password (e.g. Argon2 or bcrypt hash). This field is intended for internal service use.',
     example: '$argon2id$v=19$m=65536,t=3,p=4$h8mWQ4yQjv1...R5w',
-    minLength: 20,
+    minLength: 8,
   })
   @IsString()
   @MinLength(20)

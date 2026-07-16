@@ -36,7 +36,11 @@ export class AuthService {
 
   // ─── Registration ────────────────────────────────────────────────────
 
-  async register(dto: RegisterDto): Promise<{ user: any; tokens: AuthTokens }> {
+  async register(
+    dto: RegisterDto,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<{ user: any; tokens: AuthTokens }> {
     const passwordHash = await this.passwordService.hash(dto.password);
 
     // Map organization input
@@ -48,39 +52,78 @@ export class AuthService {
         }
       : undefined;
 
-    const user = await this.usersService.create({
-      firstName: dto.firstName,
-      lastName: dto.lastName,
-      email: dto.email,
-      passwordHash,
-      organization: orgInput,
-    });
+    // ─── MODIFIED: Wrap entire registration in a transaction ──────────────
+    const { user, tokens, verificationToken } = await this.prisma.$transaction(
+      async (tx) => {
+        // 1. Create user (pass transaction client)
+        const user = await this.usersService.create(
+          {
+            firstName: dto.firstName,
+            lastName: dto.lastName,
+            email: dto.email,
+            passwordHash,
+            organization: orgInput,
+          },
+          tx, // pass transaction
+        );
 
-    // Generate and store verification token
-    const verificationToken = this.generateSecureToken();
-    const tokenHash = await this.passwordService.hash(verificationToken);
-    const expiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-    await this.usersService.createVerificationToken(user.id, tokenHash, expiry);
+        // 2. Generate and store verification token
+        const verificationToken = this.generateSecureToken();
+        const tokenHash = await this.passwordService.hash(verificationToken);
+        const expiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+        await this.usersService.createVerificationToken(
+          user.id,
+          tokenHash,
+          expiry,
+          tx, // pass transaction
+        );
 
-    // Send verification email (placeholder)
-    this.sendVerificationEmail(user.email, verificationToken);
+        // 3. Generate JWT tokens (can be inside or outside transaction)
+        const tokens = await this.generateTokens(user.id, user.email);
 
-    // Generate JWT tokens
-    const tokens = await this.generateTokens(user.id, user.email);
+        // 4. Store refresh token (using transaction)
+        const refreshTokenHash = await this.passwordService.hash(
+          tokens.refreshToken,
+        );
+        const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        await this.usersService.createRefreshToken(
+          user.id,
+          refreshTokenHash,
+          refreshExpiry,
+          tx, // pass transaction
+        );
 
-    // Store refresh token in its own table
-    const refreshTokenHash = await this.passwordService.hash(
-      tokens.refreshToken,
+        // 4. Create a session record
+        const sessionExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        await tx.session.create({
+          data: {
+            userId: user.id,
+            ipAddress: ipAddress?.slice(0, 45),
+            userAgent: userAgent?.slice(0, 255),
+            expiresAt: sessionExpiry,
+          },
+        });
+
+        return { user, tokens, verificationToken };
+      },
     );
-    // We need to extract expiry from the refresh token JWT or use a fixed duration
-    // For simplicity, we can decode the token to get exp, or set expiry based on config.
-    // Here we'll use the same expiry as the JWT (7d)
-    const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-    await this.usersService.createRefreshToken(
-      user.id,
-      refreshTokenHash,
-      refreshExpiry,
-    );
+
+    // ─── MODIFIED: Conditionally send verification email after commit ─────
+    // Determine if we should send the email:
+    // 1. Use DTO override if provided, else fallback to env var (default true)
+    const globalSendEmail =
+      process.env.SEND_VERIFICATION_EMAIL_ON_REGISTER !== 'false';
+    const shouldSend =
+      dto.sendVerificationEmail !== undefined
+        ? dto.sendVerificationEmail
+        : globalSendEmail;
+
+    if (shouldSend) {
+      // Use setImmediate to send email asynchronously without blocking response
+      setImmediate(() => {
+        this.sendVerificationEmail(user.email, verificationToken);
+      });
+    }
 
     return { user, tokens };
   }
@@ -208,7 +251,7 @@ export class AuthService {
   async forgotPassword(dto: ForgotPasswordDto): Promise<void> {
     const user = await this.usersService.findByEmail(dto.email);
     if (!user) {
-      // For security, do not reveal if email exists.
+      // For security, email is not revealed if it exists.
       return;
     }
 

@@ -62,7 +62,7 @@ export class RegisterDto {
 
   @Transform(({ value }) => value?.trim())
   @IsNotEmpty()
-  @Length(12, 128)
+  @Length(8, 128)
   @Matches(
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&^#()[\]{}\-_=+|;:'",.<>/~`\\]).+$/,
     {
@@ -99,4 +99,14 @@ export class RegisterDto {
   @ValidateNested()
   @Type(() => OrganizationDto)
   organization?: OrganizationDto;
+
+  @ApiPropertyOptional({
+    description:
+      'Override the global SEND_VERIFICATION_EMAIL_ON_REGISTER setting. If true, sends the verification email; if false, skips it.',
+    example: true,
+    default: process.env.SEND_VERIFICATION_EMAIL_ON_REGISTER !== 'false',
+  })
+  @IsOptional()
+  @IsBoolean()
+  sendVerificationEmail?: boolean;
 }

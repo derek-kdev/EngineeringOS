@@ -51,8 +51,18 @@ export class AuthController {
     status: 400,
     description: 'Invalid registration data or email already exists',
   })
-  async register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+  async register(
+    @Body() dto: RegisterDto,
+    @Req() req: Request,) {
+     const forwarded = req.headers['x-forwarded-for'] as string | undefined;
+    const ip = forwarded
+      ? forwarded.split(',')[0].trim()
+      : req.ip || req.socket?.remoteAddress || 'unknown';
+
+    const userAgent = req.headers['user-agent'] || 'unknown';
+
+    // Pass to service
+    return this.authService.register(dto, ip, userAgent);
   }
 
   @Post('login')

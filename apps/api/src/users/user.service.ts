@@ -1,4 +1,4 @@
-// users.service.ts
+// user.service.ts
 import {
   BadRequestException,
   ConflictException,
@@ -32,71 +32,80 @@ export class UsersService {
    * Creates a new user inside a transaction.
    * Optionally creates an organization with owner membership.
    */
-  async create(input: CreateUserInput): Promise<SafeUser> {
+  async create(
+    input: CreateUserInput,
+    tx?: Prisma.TransactionClient, // ADDED: optional transaction client
+  ): Promise<SafeUser> {
     const email = input.email.trim().toLowerCase();
     const firstName = input.firstName.trim();
     const lastName = input.lastName.trim();
     const displayName = `${firstName} ${lastName}`;
 
-    return this.prisma.$transaction(async (tx) => {
-      const existing = await tx.user.findUnique({ where: { email } });
-      if (existing) {
-        throw new ConflictException('A user with this email already exists.');
+    // Use provided transaction client or fallback to default
+    const prisma = tx ?? this.prisma;
+
+    // ─── REMOVED: this.prisma.$transaction(...) ──────────────────────────
+    // Now we rely on the caller to provide a transaction if needed.
+    // If no tx is passed, we still run the operations sequentially
+    // (not atomic) – but for registration we will always pass one.
+
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      throw new ConflictException('A user with this email already exists.');
+    }
+
+    const user = await prisma.user.create({
+      data: {
+        email,
+        passwordHash: input.passwordHash,
+        firstName,
+        lastName,
+        displayName,
+      },
+    });
+
+    await prisma.userPreference.create({
+      data: { userId: user.id },
+    });
+
+    if (input.organization?.create) {
+      if (!input.organization.name || !input.organization.slug) {
+        throw new BadRequestException(
+          'Organization name and slug are required when creating an organization.',
+        );
       }
 
-      const user = await tx.user.create({
+      const existingOrg = await prisma.organization.findUnique({
+        where: { slug: input.organization.slug },
+      });
+      if (existingOrg) {
+        throw new ConflictException('Organization slug already exists.');
+      }
+
+      const organization = await prisma.organization.create({
         data: {
-          email,
-          passwordHash: input.passwordHash,
-          firstName,
-          lastName,
-          displayName,
+          ownerId: user.id,
+          name: input.organization.name,
+          slug: input.organization.slug,
         },
       });
 
-      await tx.userPreference.create({
-        data: { userId: user.id },
+      await prisma.organizationSettings.create({
+        data: { organizationId: organization.id },
       });
 
-      if (input.organization?.create) {
-        if (!input.organization.name || !input.organization.slug) {
-          throw new BadRequestException(
-            'Organization name and slug are required when creating an organization.',
-          );
-        }
+      await prisma.membership.create({
+        data: {
+          organizationId: organization.id,
+          userId: user.id,
+          role: OrganizationRole.OWNER,
+          status: MembershipStatus.ACTIVE,
+          joinedAt: new Date(),
+        },
+      });
+    }
 
-        const existingOrg = await tx.organization.findUnique({
-          where: { slug: input.organization.slug },
-        });
-        if (existingOrg) {
-          throw new ConflictException('Organization slug already exists.');
-        }
-
-        const organization = await tx.organization.create({
-          data: {
-            ownerId: user.id,
-            name: input.organization.name,
-            slug: input.organization.slug,
-          },
-        });
-
-        await tx.organizationSettings.create({
-          data: { organizationId: organization.id },
-        });
-
-        await tx.membership.create({
-          data: {
-            organizationId: organization.id,
-            userId: user.id,
-            role: OrganizationRole.OWNER,
-            status: MembershipStatus.ACTIVE,
-            joinedAt: new Date(),
-          },
-        });
-      }
-
-      return this.mapper.toSafeUser(user);
-    });
+    return this.mapper.toSafeUser(user);
   }
 
   /**
@@ -210,12 +219,17 @@ export class UsersService {
 
   // ─── Token Management Methods ──────────────────────────────────────
 
+  /**
+   * MODIFIED: Accepts optional transaction client.
+   */
   async createRefreshToken(
     userId: string,
     tokenHash: string,
     expiresAt: Date,
+    tx?: Prisma.TransactionClient, // ADDED
   ): Promise<void> {
-    await this.prisma.refreshToken.create({
+    const prisma = tx ?? this.prisma;
+    await prisma.refreshToken.create({
       data: {
         userId,
         tokenHash,
@@ -224,12 +238,17 @@ export class UsersService {
     });
   }
 
+  /**
+   * MODIFIED: Accepts optional transaction client.
+   */
   async createPasswordResetToken(
     userId: string,
     tokenHash: string,
     expiresAt: Date,
+    tx?: Prisma.TransactionClient, // ADDED
   ): Promise<void> {
-    await this.prisma.passwordResetToken.create({
+    const prisma = tx ?? this.prisma;
+    await prisma.passwordResetToken.create({
       data: {
         userId,
         tokenHash,
@@ -238,12 +257,17 @@ export class UsersService {
     });
   }
 
+  /**
+   * MODIFIED: Accepts optional transaction client.
+   */
   async createVerificationToken(
     userId: string,
     tokenHash: string,
     expiresAt: Date,
+    tx?: Prisma.TransactionClient, // ADDED
   ): Promise<void> {
-    await this.prisma.emailVerificationToken.create({
+    const prisma = tx ?? this.prisma;
+    await prisma.emailVerificationToken.create({
       data: {
         userId,
         tokenHash,
