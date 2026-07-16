@@ -79,7 +79,11 @@ export class AuthService {
         );
 
         // 3. Generate JWT tokens (can be inside or outside transaction)
-        const tokens = await this.generateTokens(user.id, user.email);
+        const tokens = await this.generateTokens({
+          id: user.id,
+          email: user.email,
+          role: user.role,
+        });
 
         // 4. Store refresh token (using transaction)
         const refreshTokenHash = await this.passwordService.hash(
@@ -143,8 +147,11 @@ export class AuthService {
     // Everything in one transaction
     const tokens = await this.prisma.$transaction(async (tx) => {
       // 1. Generate tokens
-      const tokens = await this.generateTokens(user.id, user.email);
-
+      const tokens = await this.generateTokens({
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      });
       // 2. Store refresh token
       const refreshTokenHash = await this.passwordService.hash(
         tokens.refreshToken,
@@ -219,7 +226,11 @@ export class AuthService {
     });
 
     // Generate new tokens
-    const tokens = await this.generateTokens(user.id, user.email);
+    const tokens = await this.generateTokens({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    });
     const newRefreshTokenHash = await this.passwordService.hash(
       tokens.refreshToken,
     );
@@ -358,11 +369,16 @@ export class AuthService {
     return this.usersService.findById(user.id);
   }
 
-  private async generateTokens(
-    userId: string,
-    email: string,
-  ): Promise<AuthTokens> {
-    const payload: JwtPayload = { sub: userId, email };
+  private async generateTokens(user: {
+    id: string;
+    email: string;
+    role: string;
+  }): Promise<AuthTokens> {
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    };
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
         secret: process.env.JWT_ACCESS_SECRET,

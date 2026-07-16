@@ -14,10 +14,12 @@ import { UsersService } from './user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserProfileDto } from './dto/user-profile.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { SafeUser } from '../common/security/safe-user.interface';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('Users')
 @Controller('users')
@@ -54,6 +56,8 @@ export class UsersController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard) // order: auth first, then roles
+  @Roles('ADMIN')
   @ApiOperation({ summary: 'Update a user' })
   @ApiParam({ name: 'id', description: 'User UUID' })
   @ApiResponse({ status: 200, description: 'User updated' })
@@ -66,6 +70,8 @@ export class UsersController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Soft delete a user' })
   @ApiParam({ name: 'id', description: 'User UUID' })

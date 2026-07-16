@@ -12,6 +12,7 @@ export class UserMapper {
       firstName: user.firstName,
       lastName: user.lastName,
       displayName: user.displayName,
+      role: user.role,
       avatarUrl: user.avatarUrl,
       phone: user.phone,
       jobTitle: user.jobTitle,

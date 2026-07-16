@@ -4,6 +4,7 @@ export interface SafeUser {
   firstName: string;
   lastName: string;
   displayName: string | null;
+  role: string;
   avatarUrl: string | null;
   phone: string | null;
   jobTitle: string | null;
@@ -11,7 +12,7 @@ export interface SafeUser {
   timezone: string;
   isActive: boolean;
   emailVerifiedAt: Date | null;
-  lastLoginAt: Date | null; // added
+  lastLoginAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

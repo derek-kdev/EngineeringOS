@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -10,10 +10,11 @@ import { AuthService } from './auth.service';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
+import { RolesGuard } from './guards';
 
 @Module({
   imports: [
-    UsersModule,
+    forwardRef(() => UsersModule),
     SessionsModule, // added
     PassportModule,
     ConfigModule,
@@ -37,6 +38,7 @@ import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
     LocalStrategy,
     JwtStrategy,
     RefreshTokenStrategy,
+    RolesGuard,
   ],
   exports: [AuthService],
 })

@@ -1,13 +1,26 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import { Reflector } from '@nestjs/core';
+import { ROLES_KEY } from '../decorators/roles.decorator';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  canActivate(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    context: ExecutionContext,
-  ): boolean | Promise<boolean> | Observable<boolean> {
-    // Implement role-checking logic here
-    return true; // Placeholder
+  constructor(private reflector: Reflector) {}
+
+  canActivate(context: ExecutionContext): boolean {
+    const requiredRoles = this.reflector.getAllAndOverride<string[]>(
+      ROLES_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+    if (!requiredRoles) {
+      return true; // no roles required, allow access
+    }
+
+    const request = context.switchToHttp().getRequest();
+    const user = request.user;
+    if (!user) {
+      return false;
+    }
+
+    return requiredRoles.some((role) => user.role === role);
   }
 }
