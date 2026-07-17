@@ -1,29 +1,66 @@
 "use client";
 
 
+import { usePathname } from "next/navigation";
+
 import DashboardShell from "@/components/dashboard/DashboardShell";
 
 
 export default function DashboardLayout({
 
-children,
+  children,
 
 }:{
 
-children: React.ReactNode;
+  children: React.ReactNode;
 
 }) {
 
 
-return (
+  const pathname = usePathname();
 
-<DashboardShell>
 
-{children}
 
-</DashboardShell>
+  /*
+  |--------------------------------------------------------------------------
+  | Prototype Engine Fullscreen Mode
+  |--------------------------------------------------------------------------
+  */
 
-);
+  if (
+    pathname.startsWith("/dashboard/prototype")
+  ) {
+
+    return (
+
+      <>
+
+        {children}
+
+      </>
+
+    );
+
+  }
+
+
+
+  /*
+  |--------------------------------------------------------------------------
+  | Normal Dashboard Mode
+  |--------------------------------------------------------------------------
+  */
+
+
+  return (
+
+    <DashboardShell>
+
+      {children}
+
+    </DashboardShell>
+
+  );
 
 
 }

@@ -67,3 +67,28 @@ border-color:#00D2FF;
 .auth-input:focus{
   border-color:#00D2FF;
 }
+
+.prototype-page {
+    width:100vw;
+    height:100vh;
+    overflow:hidden;
+    background:#05101d;
+}
+.bg-grid {
+  background-image:
+    linear-gradient(
+      rgba(255,255,255,0.05) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,0.05) 1px,
+      transparent 1px
+    );
+  background-size:40px 40px;
+}
+
+
+.tool {
+  @apply flex items-center gap-2 px-3 py-1.5 rounded bg-[#14233f] text-slate-400 hover:text-white hover:bg-[#1a2d52];
+}
