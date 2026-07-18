@@ -1,0 +1,41 @@
+[2m$ eslint[22m
+[0m[0m
+[0m[4m/home/kingche/Documents/EngineeringOS/apps/web/app/(auth)/forgot-password/page.tsx[24m[0m
+[0m  [2m78:19[22m  [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4m/home/kingche/Documents/EngineeringOS/apps/web/app/(auth)/register/page.tsx[24m[0m
+[0m  [2m156:19[22m  [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4m/home/kingche/Documents/EngineeringOS/apps/web/app/(auth)/reset-password/page.tsx[24m[0m
+[0m  [2m299:17[22m  [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4m/home/kingche/Documents/EngineeringOS/apps/web/app/(auth)/signin/page.tsx[24m[0m
+[0m  [2m199:17[22m  [31merror[39m  Unexpected any. Specify a different type                         [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m769:14[22m  [31merror[39m  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  [2mreact/no-unescaped-entities[22m[0m
+[0m[0m
+[0m[4m/home/kingche/Documents/EngineeringOS/apps/web/app/verify-email/[token]/page.tsx[24m[0m
+[0m  [2m42:11[22m  [33mwarning[39m  'error' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4m/home/kingche/Documents/EngineeringOS/apps/web/app/verify-email/page.tsx[24m[0m
+[0m  [2m12:9[22m   [33mwarning[39m  'router' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m49:18[22m  [31merror[39m    Unexpected any. Specify a different type     [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4m/home/kingche/Documents/EngineeringOS/apps/web/components/dashboard/DashboardFooter.tsx[24m[0m
+[0m  [2m7:43[22m  [33mwarning[39m  'expanded' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4m/home/kingche/Documents/EngineeringOS/apps/web/components/dashboard/panels/NotificationPanel.tsx[24m[0m
+[0m  [2m14:3[22m  [33mwarning[39m  'Clock' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4m/home/kingche/Documents/EngineeringOS/apps/web/components/dashboard/panels/user/ProfileSection.tsx[24m[0m
+[0m  [2m87:10[22m  [33mwarning[39m  'error' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4m/home/kingche/Documents/EngineeringOS/apps/web/contexts/AuthContext.tsx[24m[0m
+[0m  [2m17:15[22m  [31merror[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4m/home/kingche/Documents/EngineeringOS/apps/web/lib/api/notifications.ts[24m[0m
+[0m  [2m1:8[22m  [33mwarning[39m  'api' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[31m[1m✖ 13 problems (7 errors, 6 warnings)[22m[39m[0m
+[0m[31m[1m[22m[39m[0m
+[41m[31m[[39m[49m[41m[30mELIFECYCLE[39m[49m[41m[31m][39m[49m [31mCommand failed with exit code 1.[39m
+[K[0J
