@@ -79,7 +79,6 @@ async function bootstrap() {
   app.setGlobalPrefix('api', {
     exclude: ['health'],
   });
- 
 
   app.enableVersioning({
     type: VersioningType.URI,
@@ -119,7 +118,7 @@ async function bootstrap() {
 
   await app.listen(port, '0.0.0.0');
 
-  logger.log(`EngineeringOS API running on http://0.0.0.0:${port}/api`);
+  logger.log(`EngineeringOS API running on http://0.0.0.0:${port}/api/v1`);
 }
 
 /* Process Error Handling */
