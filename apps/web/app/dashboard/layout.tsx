@@ -3,7 +3,10 @@
 
 import { usePathname } from "next/navigation";
 
+import AuthGuard from "@/components/auth/AuthGuard";
+
 import DashboardShell from "@/components/dashboard/DashboardShell";
+
 
 
 export default function DashboardLayout({
@@ -25,40 +28,51 @@ export default function DashboardLayout({
   |--------------------------------------------------------------------------
   | Prototype Engine Fullscreen Mode
   |--------------------------------------------------------------------------
+  |
+  | The prototype workspace uses the full viewport and does not render
+  | the standard dashboard shell.
+  |
+  |--------------------------------------------------------------------------
   */
 
-  if (
-    pathname.startsWith("/dashboard/prototype")
-  ) {
 
-    return (
-
-      <>
-
-        {children}
-
-      </>
-
+  const isPrototypeRoute =
+    pathname.startsWith(
+      "/dashboard/prototype"
     );
 
-  }
 
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | Normal Dashboard Mode
-  |--------------------------------------------------------------------------
-  */
 
 
   return (
 
-    <DashboardShell>
+    <AuthGuard>
 
-      {children}
 
-    </DashboardShell>
+      {isPrototypeRoute ? (
+
+
+        <>
+
+          {children}
+
+        </>
+
+
+      ) : (
+
+
+        <DashboardShell>
+
+          {children}
+
+        </DashboardShell>
+
+
+      )}
+
+
+    </AuthGuard>
 
   );
 

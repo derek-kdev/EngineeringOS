@@ -1,97 +1,90 @@
 "use client";
 
+
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
+
 import api from "@/lib/api";
+
 
 
 export interface User {
 
-  id: string;
+  id:string;
 
-  email: string;
+  email:string;
 
-  firstName: string;
+  firstName:string;
 
-  lastName: string;
+  lastName:string;
 
-  displayName?: string | null;
+  displayName?:string | null;
 
-  avatarUrl?: string | null;
+  avatarUrl?:string | null;
 
-  phone?: string | null;
+  role?:string;
 
-  jobTitle?: string | null;
+  createdAt?:string;
 
-  role?: string;
-
-  locale?: string;
-
-  timezone?: string;
-
-  isActive?: boolean;
-
-  emailVerifiedAt?: string | null;
-
-  lastLoginAt?: string | null;
-
-  createdAt?: string;
-
-  updatedAt?: string;
+  updatedAt?:string;
 
 }
+
+
 
 
 
 interface AuthState {
 
 
-  user: User | null;
+  user:User | null;
 
 
-  accessToken: string | null;
+  accessToken:string | null;
 
 
-  refreshToken: string | null;
+  refreshToken:string | null;
 
 
-  hydrated: boolean;
+  hydrated:boolean;
 
 
-  loading: boolean;
-
-
-
-  setHydrated:(
-    value:boolean
-  ) => void;
+  loading:boolean;
 
 
 
-  setLoading:(
-    value:boolean
-  ) => void;
+  setHydrated:(value:boolean)=>void;
+
+
+  setLoading:(value:boolean)=>void;
 
 
 
   login:(
+
     user:User,
+
     accessToken:string,
+
     refreshToken:string
-  ) => void;
+
+  )=>void;
 
 
 
-  logout:() => Promise<void>;
+  setUser:(user:User|null)=>void;
 
 
 
-  setUser:(
-    user:User | null
-  ) => void;
+  clearAuth:()=>void;
 
 
 
-  isAuthenticated:() => boolean;
+  logout:()=>Promise<void>;
+
+
+
+  isAuthenticated:()=>boolean;
 
 
 }
@@ -100,170 +93,198 @@ interface AuthState {
 
 
 
+
 export const useAuthStore =
-create<AuthState>((set,get)=>({
+create<AuthState>()(
 
+persist(
 
+(set,get)=>({
 
-  user:null,
 
 
-  accessToken:null,
+user:null,
 
 
-  refreshToken:null,
+accessToken:null,
 
 
-  hydrated:false,
+refreshToken:null,
 
 
-  loading:false,
+hydrated:false,
 
 
+loading:false,
 
 
-  setHydrated:(value)=>
 
-    set({
 
-      hydrated:value,
 
-    }),
+setHydrated:(value)=>
 
+set({
 
+hydrated:value
 
+}),
 
 
-  setLoading:(value)=>
 
-    set({
 
-      loading:value,
 
-    }),
+setLoading:(value)=>
 
+set({
 
+loading:value
 
+}),
 
 
 
-  login:(
 
-    user,
 
-    accessToken,
 
-    refreshToken,
+login:(
 
-  ) =>
+user,
 
-    set({
+accessToken,
 
-      user,
+refreshToken
 
-      accessToken,
+)=>
 
-      refreshToken,
+set({
 
-    }),
+user,
 
+accessToken,
 
+refreshToken
 
+}),
 
 
 
-  logout: async()=>{
 
 
-    try{
+setUser:(user)=>
 
+set({
 
-      await api.post("/auth/logout");
+user
 
+}),
 
-    }catch(error){
 
 
-      console.error(
-        "Logout API failed:",
-        error
-      );
 
 
-    }
 
 
+clearAuth:()=>
 
-    set({
 
-      user:null,
+set({
 
-      accessToken:null,
+user:null,
 
-      refreshToken:null,
+accessToken:null,
 
-    });
+refreshToken:null
 
+}),
 
 
-    if(typeof window !== "undefined"){
 
 
-      localStorage.removeItem(
-        "engineeringos-auth"
-      );
 
 
-      localStorage.removeItem(
-        "accessToken"
-      );
 
+logout:async()=>{
 
-      localStorage.removeItem(
-        "refreshToken"
-      );
 
+try{
 
-      window.location.href = "/";
 
+await api.post(
+"/auth/logout"
+);
 
-    }
 
+}catch(error){
 
-  },
 
+console.warn(
+"Logout ignored:",
+error
+);
 
 
+}
 
 
 
-  setUser:(user)=>
+get().clearAuth();
 
-    set({
 
-      user,
 
-    }),
+},
 
 
 
 
 
 
-  isAuthenticated:()=>{
 
 
-    const state =
-      get();
+isAuthenticated:()=>{
 
 
-    return Boolean(
-      state.user
-    );
+const state=get();
 
 
-  },
+return Boolean(
 
+state.user &&
 
+state.accessToken
 
-}));
+);
+
+
+},
+
+
+
+}),
+
+
+
+{
+
+name:"engineeringos-auth",
+
+
+
+onRehydrateStorage:()=>()=>{
+
+
+useAuthStore
+.getState()
+.setHydrated(true);
+
+
+}
+
+
+
+}
+
+
+
+)
+
+);
