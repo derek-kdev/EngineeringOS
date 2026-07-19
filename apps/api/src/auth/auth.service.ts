@@ -1,28 +1,22 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
+
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   Injectable,
   UnauthorizedException,
-  BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { randomBytes } from 'crypto';
 import { UsersService } from '../users/user.service';
 import { PasswordService } from '../common/security/password.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SessionsService } from '../sessions/sessions.service';
-import {
-  LoginDto,
-  RegisterDto,
-  RefreshTokenDto,
-  ForgotPasswordDto,
-  ResetPasswordDto,
-  VerifyEmailDto,
-} from './dto';
+import { EmailVerificationService } from '../email-verification/email-verification.service';
+import { PasswordResetService } from '../password-reset/password-reset.service';
+import { LoginDto, RegisterDto, RefreshTokenDto } from './dto';
 import { AuthTokens } from './interfaces/auth-tokens.interface';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { createHash } from 'crypto';
 
 @Injectable()
 export class AuthService {
@@ -32,6 +26,8 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
     private readonly sessionsService: SessionsService,
+    private readonly emailVerificationService: EmailVerificationService,
+    private readonly passwordResetService: PasswordResetService,
   ) {}
 
   // ─── Registration ────────────────────────────────────────────────────
@@ -53,68 +49,51 @@ export class AuthService {
       : undefined;
 
     // ─── MODIFIED: Wrap entire registration in a transaction ──────────────
-    const { user, tokens, verificationToken } = await this.prisma.$transaction(
-      async (tx) => {
-        // 1. Create user (pass transaction client)
-        const user = await this.usersService.create(
-          {
-            firstName: dto.firstName,
-            lastName: dto.lastName,
-            email: dto.email,
-            passwordHash,
-            organization: orgInput,
-          },
-          tx, // pass transaction
-        );
+    const { user, tokens } = await this.prisma.$transaction(async (tx) => {
+      const user = await this.usersService.create(
+        {
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+          email: dto.email,
+          passwordHash,
+          organization: orgInput,
+        },
+        tx,
+      );
 
-        // 2. Generate and store verification token
-        const verificationToken = this.generateSecureToken();
-        const tokenHash = await this.passwordService.hash(verificationToken);
-        const expiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-        await this.usersService.createVerificationToken(
-          user.id,
-          tokenHash,
-          expiry,
-          tx, // pass transaction
-        );
+      // 2. Generate JWT tokens (can be inside or outside transaction)
+      const tokens = await this.generateTokens({
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      });
 
-        // 3. Generate JWT tokens (can be inside or outside transaction)
-        const tokens = await this.generateTokens({
-          id: user.id,
-          email: user.email,
-          role: user.role,
-        });
+      // 3. Store refresh token
+      const refreshTokenHash = this.hashToken(tokens.refreshToken);
+      const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      await tx.refreshToken.create({
+        data: {
+          userId: user.id,
+          tokenHash: refreshTokenHash,
+          expiresAt: refreshExpiry,
+        },
+      });
 
-        // 4. Store refresh token (using transaction)
-        const refreshTokenHash = await this.passwordService.hash(
-          tokens.refreshToken,
-        );
-        const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-        await this.usersService.createRefreshToken(
-          user.id,
-          refreshTokenHash,
-          refreshExpiry,
-          tx, // pass transaction
-        );
+      // 4. Create a session record
+      const sessionExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      await tx.session.create({
+        data: {
+          userId: user.id,
+          ipAddress: ipAddress?.slice(0, 45),
+          userAgent: userAgent?.slice(0, 255),
+          expiresAt: sessionExpiry,
+        },
+      });
 
-        // 4. Create a session record
-        const sessionExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-        await tx.session.create({
-          data: {
-            userId: user.id,
-            ipAddress: ipAddress?.slice(0, 45),
-            userAgent: userAgent?.slice(0, 255),
-            expiresAt: sessionExpiry,
-          },
-        });
+      return { user, tokens };
+    });
 
-        return { user, tokens, verificationToken };
-      },
-    );
-
-    // ─── MODIFIED: Conditionally send verification email after commit ─────
-    // Determine if we should send the email:
-    // 1. Use DTO override if provided, else fallback to env var (default true)
+    // Send verification email if configured
     const globalSendEmail =
       process.env.SEND_VERIFICATION_EMAIL_ON_REGISTER !== 'false';
     const shouldSend =
@@ -123,9 +102,13 @@ export class AuthService {
         : globalSendEmail;
 
     if (shouldSend) {
-      // Use setImmediate to send email asynchronously without blocking response
       setImmediate(() => {
-        this.sendVerificationEmail(user.email, verificationToken);
+        this.emailVerificationService
+          .createAndSendVerificationEmail(user.id)
+          .catch((err) => {
+            // Log error but don't fail registration
+            console.error('Failed to send verification email:', err);
+          });
       });
     }
 
@@ -153,9 +136,7 @@ export class AuthService {
         role: user.role,
       });
       // 2. Store refresh token
-      const refreshTokenHash = await this.passwordService.hash(
-        tokens.refreshToken,
-      );
+      const refreshTokenHash = this.hashToken(tokens.refreshToken);
       const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
       await tx.refreshToken.create({
         data: {
@@ -206,7 +187,7 @@ export class AuthService {
     }
 
     // Find the refresh token record by its hash
-    const tokenHash = await this.passwordService.hash(dto.refreshToken);
+    const tokenHash = this.hashToken(dto.refreshToken);
     const storedToken = await this.prisma.refreshToken.findFirst({
       where: {
         tokenHash,
@@ -231,9 +212,7 @@ export class AuthService {
       email: user.email,
       role: user.role,
     });
-    const newRefreshTokenHash = await this.passwordService.hash(
-      tokens.refreshToken,
-    );
+    const newRefreshTokenHash = this.hashToken(tokens.refreshToken);
     const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     await this.usersService.createRefreshToken(
       user.id,
@@ -259,99 +238,54 @@ export class AuthService {
 
   // ─── Forgot Password ───────────────────────────────────────────────
 
-  async forgotPassword(dto: ForgotPasswordDto): Promise<void> {
-    const user = await this.usersService.findByEmail(dto.email);
-    if (!user) {
-      // For security, email is not revealed if it exists.
-      return;
-    }
-
-    const resetToken = this.generateSecureToken();
-    const tokenHash = await this.passwordService.hash(resetToken);
-    const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-    await this.usersService.createPasswordResetToken(
-      user.id,
-      tokenHash,
-      expiry,
-    );
-
-    this.sendPasswordResetEmail(user.email, resetToken);
+  async forgotPassword(email: string): Promise<void> {
+    await this.passwordResetService.requestPasswordReset(email);
   }
 
   // ─── Reset Password ────────────────────────────────────────────────
 
-  async resetPassword(dto: ResetPasswordDto): Promise<void> {
-    const tokenHash = await this.passwordService.hash(dto.token);
-    const resetTokenRecord = await this.prisma.passwordResetToken.findFirst({
-      where: {
-        tokenHash,
-        usedAt: null,
-        expiresAt: { gt: new Date() },
-      },
-      include: { user: true },
-    });
-    if (!resetTokenRecord) {
-      throw new BadRequestException('Invalid or expired reset token');
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    await this.passwordResetService.resetPassword(token, newPassword);
+  }
+
+  // ─── Change Password ────────────────────────────────────────────
+
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    const user = await this.usersService.findByIdWithSensitive(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
-
-    const newPasswordHash = await this.passwordService.hash(dto.password);
-    await this.usersService.updatePassword(
-      resetTokenRecord.userId,
-      newPasswordHash,
+    const isMatch = await this.passwordService.compare(
+      currentPassword,
+      user.passwordHash,
     );
-
-    // Mark token as used
-    await this.prisma.passwordResetToken.update({
-      where: { id: resetTokenRecord.id },
-      data: { usedAt: new Date() },
+    if (!isMatch) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+    const newPasswordHash = await this.passwordService.hash(newPassword);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: newPasswordHash },
     });
-
-    // Optionally revoke all refresh tokens for this user
     await this.prisma.refreshToken.updateMany({
-      where: { userId: resetTokenRecord.userId, revokedAt: null },
+      where: { userId, revokedAt: null },
       data: { revokedAt: new Date() },
     });
+    await this.sessionsService.revokeAllSessions(userId);
   }
 
   // ─── Email Verification ────────────────────────────────────────────
 
-  async verifyEmailToken(token: string): Promise<void> {
-    const tokenHash = await this.passwordService.hash(token);
-    const verificationRecord =
-      await this.prisma.emailVerificationToken.findFirst({
-        where: {
-          tokenHash,
-          usedAt: null,
-          expiresAt: { gt: new Date() },
-        },
-      });
-    if (!verificationRecord) {
-      throw new BadRequestException('Invalid or expired verification token');
-    }
-
-    await this.usersService.markEmailVerified(verificationRecord.userId);
-    // Mark token as used
-    await this.prisma.emailVerificationToken.update({
-      where: { id: verificationRecord.id },
-      data: { usedAt: new Date() },
-    });
+  async verifyEmail(token: string): Promise<void> {
+    await this.emailVerificationService.verifyEmailToken(token);
   }
 
-  async verifyEmail(dto: VerifyEmailDto): Promise<void> {
-    const user = await this.usersService.findByEmail(dto.email);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    if (user.emailVerifiedAt) {
-      throw new BadRequestException('Email already verified');
-    }
-
-    const verificationToken = this.generateSecureToken();
-    const tokenHash = await this.passwordService.hash(verificationToken);
-    const expiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    await this.usersService.createVerificationToken(user.id, tokenHash, expiry);
-
-    this.sendVerificationEmail(user.email, verificationToken);
+  async resendVerification(email: string): Promise<void> {
+    await this.emailVerificationService.resendVerificationEmail(email);
   }
 
   // ─── Internal Helpers ──────────────────────────────────────────────
@@ -367,6 +301,10 @@ export class AuthService {
     if (!isMatch) return null;
 
     return this.usersService.findById(user.id);
+  }
+
+  private hashToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
   }
 
   private async generateTokens(user: {
@@ -390,21 +328,5 @@ export class AuthService {
       }),
     ]);
     return { accessToken, refreshToken };
-  }
-
-  private generateSecureToken(): string {
-    return randomBytes(32).toString('hex');
-  }
-
-  // ─── Email Sending Placeholders ──────────────────────────────────
-
-  private sendVerificationEmail(email: string, token: string): void {
-    console.log(`Sending verification email to ${email} with token: ${token}`);
-  }
-
-  private sendPasswordResetEmail(email: string, token: string): void {
-    console.log(
-      `Sending password reset email to ${email} with token: ${token}`,
-    );
   }
 }

@@ -4,6 +4,9 @@ import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from '../users/user.module';
 import { SessionsModule } from '../sessions/sessions.module';
+import { MailModule } from '../mail/mail.module';
+import { EmailVerificationModule } from '../email-verification/email-verification.module';
+import { PasswordResetModule } from '../password-reset/password-rest.module';
 import { PasswordService } from '../common/security/password.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -15,7 +18,10 @@ import { RolesGuard } from './guards';
 @Module({
   imports: [
     forwardRef(() => UsersModule),
-    SessionsModule, // added
+    SessionsModule,
+    MailModule,
+    EmailVerificationModule,
+    PasswordResetModule,
     PassportModule,
     ConfigModule,
     JwtModule.registerAsync({

@@ -1,25 +1,24 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-// src/auth/dto/reset-password.dto.ts
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+// src/auth/dto/change-password.dto.ts
 import { Transform } from 'class-transformer';
 import { IsNotEmpty, IsString, MinLength, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class ResetPasswordDto {
+export class ChangePasswordDto {
   @ApiProperty({
-    description: 'Password reset token received via email.',
-    example: 'a1b2c3d4e5f6...',
+    description: 'Current password of the user',
+    example: 'MyCurrentP@ssw0rd!',
   })
   @Transform(({ value }) => value?.trim())
   @IsNotEmpty()
   @IsString()
-  @MinLength(32)
-  token!: string;
+  currentPassword!: string;
 
   @ApiProperty({
     description: 'New password (min 8 characters, strong)',
-    example: 'MySecureP@ssw0rd!',
+    example: 'MyNewSecureP@ssw0rd!',
   })
   @Transform(({ value }) => value?.trim())
   @IsNotEmpty()

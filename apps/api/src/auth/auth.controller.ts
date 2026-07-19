@@ -6,7 +6,6 @@ import {
   Body,
   Get,
   Req,
-  Param,
   Patch,
   UseGuards,
   HttpCode,
@@ -22,6 +21,8 @@ import {
   ForgotPasswordDto,
   ResetPasswordDto,
   VerifyEmailDto,
+  ResendVerificationDto,
+  ChangePasswordDto
 } from './dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
@@ -38,6 +39,7 @@ export class AuthController {
     private readonly usersService: UsersService
   ) {}
 
+    // ─── Register New User ────────────────────────────────────────────
   @Post('register')
   @ApiOperation({
     summary: 'Register a new user',
@@ -65,6 +67,7 @@ export class AuthController {
     return this.authService.register(dto, ip, userAgent);
   }
 
+    // ─── User Login ────────────────────────────────────────────
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -95,6 +98,7 @@ export class AuthController {
     return this.authService.login(dto, ip, userAgent);
   }
 
+    // ─── Refresh Token ────────────────────────────────────────────
   @Post('refresh')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
@@ -115,6 +119,7 @@ export class AuthController {
     return this.authService.refresh(dto);
   }
 
+    // ─── User Profile ────────────────────────────────────────────
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
@@ -135,7 +140,8 @@ export class AuthController {
   ): Promise<UserProfileDto> {
     return this.usersService.findById(user.id);
   }
-  
+
+    // ─── User Logout ────────────────────────────────────────────
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
@@ -153,63 +159,68 @@ export class AuthController {
     return { message: 'Logged out successfully' };
   }
 
+    // ─── Resend Verification Email ────────────────────────────────────────────
+  @Post('resend-verification')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Resend email verification email' })
+  @ApiResponse({ status: 200, description: 'Verification email sent if account exists' })
+  async resendVerification(@Body() dto: ResendVerificationDto) {
+    await this.authService.resendVerification(dto.email);
+    return { message: 'Verification email sent if account exists' };
+  }
+
+    // ─── Email Verification ────────────────────────────────────────────
+  @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify email with token' })
+  @ApiResponse({ status: 200, description: 'Email verified successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
+  async verifyEmail(@Body() dto: VerifyEmailDto) {
+    await this.authService.verifyEmail(dto.token);
+    return { message: 'Email verified successfully' };
+  }
+
+    // ─── Forgot Password ────────────────────────────────────────────
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Request password reset',
-    description: 'Sends a password reset email if the account exists.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Password reset email sent if account exists',
-  })
+  @ApiOperation({ summary: 'Request password reset' })
+  @ApiResponse({ status: 200, description: 'Password reset email sent if account exists' })
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
-    await this.authService.forgotPassword(dto);
+    await this.authService.forgotPassword(dto.email);
     return { message: 'Password reset email sent if account exists' };
   }
 
+    // ─── Reset Password ────────────────────────────────────────────
   @Patch('reset-password')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Reset user password',
-    description: 'Resets the user password using a valid reset token.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Password reset successfully',
-  })
+  @ApiOperation({ summary: 'Reset user password' })
+  @ApiResponse({ status: 200, description: 'Password reset successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired reset token' })
   async resetPassword(@Body() dto: ResetPasswordDto) {
-    await this.authService.resetPassword(dto);
+    await this.authService.resetPassword(dto.token, dto.newPassword);
     return { message: 'Password reset successfully' };
   }
 
-  @Post('verify-email')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Verify user email',
-    description: 'Sends a verification email to the user.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Verification email sent',
-  })
-  async verifyEmail(@Body() dto: VerifyEmailDto) {
-    await this.authService.verifyEmail(dto);
-    return { message: 'Verification email sent' };
-  }
-
-  @Get('verify-email/:token')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Verify email token',
-    description: 'Verifies the email verification token.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Email verified successfully',
-  })
-  async verifyEmailToken(@Param('token') token: string) {
-    await this.authService.verifyEmailToken(token);
-    return { message: 'Email verified successfully' };
-  }
+// ─── Change Password ────────────────────────────────────────────
+@Patch('change-password')
+@UseGuards(JwtAuthGuard)
+@HttpCode(HttpStatus.OK)
+@ApiOperation({
+  summary: 'Change password',
+  description: 'Allows an authenticated user to change their password by providing the current password.',
+})
+@ApiResponse({ status: 200, description: 'Password changed successfully' })
+@ApiResponse({ status: 401, description: 'Current password is incorrect' })
+@ApiResponse({ status: 404, description: 'User not found' })
+async changePassword(
+  @CurrentUser() user: AuthenticatedUser,
+  @Body() dto: ChangePasswordDto,
+) {
+  await this.authService.changePassword(
+    user.id,
+    dto.currentPassword,
+    dto.newPassword,
+  );
+  return { message: 'Password changed successfully' };
+}
 }
