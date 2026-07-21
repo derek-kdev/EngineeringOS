@@ -1,20 +1,43 @@
 "use client";
 
-
 import {
-createContext,
-useContext,
+  createContext,
+  useContext,
+  useMemo,
 } from "react";
 
-
 import {
-useAuthStore
+  useAuthStore,
 } from "@/stores/auth.store";
 
 
 
+interface AuthContextType {
+
+  user: ReturnType<typeof useAuthStore>["user"];
+
+  accessToken: ReturnType<typeof useAuthStore>["accessToken"];
+
+  refreshToken: ReturnType<typeof useAuthStore>["refreshToken"];
+
+  hydrated: boolean;
+
+  loading: boolean;
+
+  login: ReturnType<typeof useAuthStore>["login"];
+
+  logout: ReturnType<typeof useAuthStore>["logout"];
+
+  setUser: ReturnType<typeof useAuthStore>["setUser"];
+
+  isAuthenticated: ReturnType<typeof useAuthStore>["isAuthenticated"];
+
+}
+
+
+
 const AuthContext =
-createContext<any>(null);
+  createContext<AuthContextType | null>(null);
 
 
 
@@ -22,30 +45,125 @@ createContext<any>(null);
 
 export function AuthProvider({
 
-children,
+  children,
 
-}:{
+}: {
 
-children:React.ReactNode;
+  children: React.ReactNode;
 
-}){
-
-
-const auth =
-useAuthStore();
+}) {
 
 
 
-return (
+  const user =
+    useAuthStore(
+      (state) => state.user
+    );
 
-<AuthContext.Provider value={auth}>
 
-{children}
+  const accessToken =
+    useAuthStore(
+      (state) => state.accessToken
+    );
 
-</AuthContext.Provider>
 
-);
+  const refreshToken =
+    useAuthStore(
+      (state) => state.refreshToken
+    );
 
+
+  const hydrated =
+    useAuthStore(
+      (state) => state.hydrated
+    );
+
+
+  const loading =
+    useAuthStore(
+      (state) => state.loading
+    );
+
+
+  const login =
+    useAuthStore(
+      (state) => state.login
+    );
+
+
+  const logout =
+    useAuthStore(
+      (state) => state.logout
+    );
+
+
+  const setUser =
+    useAuthStore(
+      (state) => state.setUser
+    );
+
+
+  const isAuthenticated =
+    useAuthStore(
+      (state) => state.isAuthenticated
+    );
+
+
+
+
+  const authValue =
+    useMemo(
+      () => ({
+
+        user,
+
+        accessToken,
+
+        refreshToken,
+
+        hydrated,
+
+        loading,
+
+        login,
+
+        logout,
+
+        setUser,
+
+        isAuthenticated,
+
+      }),
+
+      [
+        user,
+        accessToken,
+        refreshToken,
+        hydrated,
+        loading,
+        login,
+        logout,
+        setUser,
+        isAuthenticated,
+      ]
+
+    );
+
+
+
+
+
+  return (
+
+    <AuthContext.Provider
+      value={authValue}
+    >
+
+      {children}
+
+    </AuthContext.Provider>
+
+  );
 
 }
 
@@ -53,8 +171,26 @@ return (
 
 
 
-export function useAuth(){
 
-return useContext(AuthContext);
+export function useAuth() {
+
+
+  const context =
+    useContext(AuthContext);
+
+
+
+  if (!context) {
+
+    throw new Error(
+      "useAuth must be used inside AuthProvider"
+    );
+
+  }
+
+
+
+  return context;
+
 
 }
