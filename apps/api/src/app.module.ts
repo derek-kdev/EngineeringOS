@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailerModule } from '@nestjs-modules/mailer';
@@ -7,6 +8,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/user.module';
 import { AuthModule } from './auth/auth.module';
 import { MailModule } from './mail/mail.module';
+import { OrganizationModule } from './organizations/organization.module';
 
 @Module({
   imports: [
@@ -33,6 +35,7 @@ import { MailModule } from './mail/mail.module';
     UsersModule,
     AuthModule,
     MailModule,
+    OrganizationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

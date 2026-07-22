@@ -32,7 +32,7 @@ enum MembershipStatus {
   ACTIVE
   SUSPENDED
   REMOVED
-}
+} 
 
 enum InvitationStatus {
   PENDING

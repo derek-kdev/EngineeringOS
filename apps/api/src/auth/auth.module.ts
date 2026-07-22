@@ -14,6 +14,7 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 import { RolesGuard } from './guards';
+import { OrganizationModule } from '../organizations/organization.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { RolesGuard } from './guards';
     PasswordResetModule,
     PassportModule,
     ConfigModule,
+    OrganizationModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -45,6 +47,7 @@ import { RolesGuard } from './guards';
     JwtStrategy,
     RefreshTokenStrategy,
     RolesGuard,
+    OrganizationModule,
   ],
   exports: [AuthService],
 })

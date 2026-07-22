@@ -17,7 +17,8 @@ import { LoginDto, RegisterDto, RefreshTokenDto } from './dto';
 import { AuthTokens } from './interfaces/auth-tokens.interface';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { createHash } from 'crypto';
-
+import { OrganizationService } from '../organizations/organization.service';
+import { CreateOrganizationDto } from '../organizations/dto';
 @Injectable()
 export class AuthService {
   constructor(
@@ -28,6 +29,7 @@ export class AuthService {
     private readonly sessionsService: SessionsService,
     private readonly emailVerificationService: EmailVerificationService,
     private readonly passwordResetService: PasswordResetService,
+    private readonly organizationService: OrganizationService,
   ) {}
 
   // ─── Registration ────────────────────────────────────────────────────
@@ -39,36 +41,41 @@ export class AuthService {
   ): Promise<{ user: any; tokens: AuthTokens }> {
     const passwordHash = await this.passwordService.hash(dto.password);
 
-    // Map organization input
-    const orgInput = dto.organization?.create
-      ? {
-          create: true,
-          name: dto.organization.name!,
-          slug: dto.organization.slug!,
-        }
-      : undefined;
-
     // ─── MODIFIED: Wrap entire registration in a transaction ──────────────
     const { user, tokens } = await this.prisma.$transaction(async (tx) => {
+      //Create user (no organization)
       const user = await this.usersService.create(
         {
           firstName: dto.firstName,
           lastName: dto.lastName,
           email: dto.email,
           passwordHash,
-          organization: orgInput,
         },
         tx,
       );
 
-      // 2. Generate JWT tokens (can be inside or outside transaction)
+      // 2. Optionally create organization
+      if (dto.organization?.create) {
+        const orgDto: CreateOrganizationDto = {
+          name: dto.organization.name!,
+          slug: dto.organization.slug, // may be undefined → auto‑generated
+          // other fields can be added later if needed
+        };
+        await this.organizationService.createOrganization(
+          user.id,
+          orgDto,
+          tx, // pass the same transaction
+        );
+      }
+
+      // 3. Generate JWT tokens (can be inside or outside transaction)
       const tokens = await this.generateTokens({
         id: user.id,
         email: user.email,
         role: user.role,
       });
 
-      // 3. Store refresh token
+      // 4. Store refresh token
       const refreshTokenHash = this.hashToken(tokens.refreshToken);
       const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
       await tx.refreshToken.create({
@@ -79,7 +86,7 @@ export class AuthService {
         },
       });
 
-      // 4. Create a session record
+      // 5. Create a session record
       const sessionExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
       await tx.session.create({
         data: {

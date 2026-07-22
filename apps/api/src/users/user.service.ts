@@ -1,17 +1,10 @@
 // user.service.ts
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  MembershipStatus,
-  OrganizationRole,
-  Prisma,
-  User,
-  Language,
-} from '@prisma/client';
+import { Prisma, User, Language } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { UserMapper } from './mappers/user.mapper';
@@ -44,11 +37,6 @@ export class UsersService {
     // Use provided transaction client or fallback to default
     const prisma = tx ?? this.prisma;
 
-    // ─── REMOVED: this.prisma.$transaction(...) ──────────────────────────
-    // Now we rely on the caller to provide a transaction if needed.
-    // If no tx is passed, we still run the operations sequentially
-    // (not atomic) – but for registration we will always pass one.
-
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       throw new ConflictException('A user with this email already exists.');
@@ -67,43 +55,6 @@ export class UsersService {
     await prisma.userPreference.create({
       data: { userId: user.id },
     });
-
-    if (input.organization?.create) {
-      if (!input.organization.name || !input.organization.slug) {
-        throw new BadRequestException(
-          'Organization name and slug are required when creating an organization.',
-        );
-      }
-
-      const existingOrg = await prisma.organization.findUnique({
-        where: { slug: input.organization.slug },
-      });
-      if (existingOrg) {
-        throw new ConflictException('Organization slug already exists.');
-      }
-
-      const organization = await prisma.organization.create({
-        data: {
-          ownerId: user.id,
-          name: input.organization.name,
-          slug: input.organization.slug,
-        },
-      });
-
-      await prisma.organizationSettings.create({
-        data: { organizationId: organization.id },
-      });
-
-      await prisma.membership.create({
-        data: {
-          organizationId: organization.id,
-          userId: user.id,
-          role: OrganizationRole.OWNER,
-          status: MembershipStatus.ACTIVE,
-          joinedAt: new Date(),
-        },
-      });
-    }
 
     return this.mapper.toSafeUser(user);
   }
