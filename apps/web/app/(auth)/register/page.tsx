@@ -1,8 +1,18 @@
 "use client";
 
-import { useState } from "react";
+
+import {
+  useState,
+} from "react";
+
+
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+
+
+import {
+  useRouter,
+} from "next/navigation";
+
 
 import {
   ArrowLeft,
@@ -13,64 +23,93 @@ import {
   User,
 } from "lucide-react";
 
-import api from "@/lib/api";
-import { useAuth } from "@/hooks/useAuth";
+
+import {
+  authService,
+} from "@/services/auth.service";
 
 
-export default function RegisterPage() {
-
-  const router = useRouter();
-
-  const { login } = useAuth();
 
 
-  const [form, setForm] = useState({
+export default function RegisterPage(){
 
-    firstName: "",
 
-    lastName: "",
+  const router =
+    useRouter();
 
-    email: "",
 
-    password: "",
 
-    confirmPassword: "",
+  const [
+    form,
+    setForm
+  ] =
+  useState({
+
+    firstName:"",
+
+    lastName:"",
+
+    email:"",
+
+    password:"",
+
+    confirmPassword:"",
 
   });
 
 
 
-  const [showPassword, setShowPassword] =
-    useState(false);
 
-
-  const [showConfirmPassword, setShowConfirmPassword] =
-    useState(false);
-
-
-
-  const [loading, setLoading] =
-    useState(false);
+  const [
+    showPassword,
+    setShowPassword
+  ] =
+  useState(false);
 
 
 
-  const [error, setError] =
-    useState("");
+  const [
+    showConfirmPassword,
+    setShowConfirmPassword
+  ] =
+  useState(false);
+
+
+
+  const [
+    loading,
+    setLoading
+  ] =
+  useState(false);
+
+
+
+  const [
+    error,
+    setError
+  ] =
+  useState("");
+
+
+
 
 
 
 
   function handleChange(
-    e: React.ChangeEvent<HTMLInputElement>
-  ) {
+    e:React.ChangeEvent<HTMLInputElement>
+  ){
+
 
     setForm({
 
       ...form,
 
-      [e.target.name]: e.target.value,
+      [e.target.name]:
+        e.target.value,
 
     });
+
 
   }
 
@@ -78,9 +117,14 @@ export default function RegisterPage() {
 
 
 
+
+
+
+
   async function handleSubmit(
-    e: React.FormEvent<HTMLFormElement>
-  ) {
+    e:React.FormEvent<HTMLFormElement>
+  ){
+
 
     e.preventDefault();
 
@@ -89,9 +133,10 @@ export default function RegisterPage() {
 
 
 
-    if (
+
+    if(
       form.password !== form.confirmPassword
-    ) {
+    ){
 
       setError(
         "Passwords do not match"
@@ -103,79 +148,85 @@ export default function RegisterPage() {
 
 
 
+
+
+
     setLoading(true);
 
 
 
-    try {
+    try{
 
 
-      const response = await api.post(
-        "/auth/register",
-        {
+      await authService.register({
 
-          firstName: form.firstName,
-
-          lastName: form.lastName,
-
-          email: form.email,
-
-          password: form.password,
-
-        }
-      );
+        firstName:
+          form.firstName,
 
 
-
-      const {
-        user,
-        tokens,
-      } = response.data;
+        lastName:
+          form.lastName,
 
 
+        email:
+          form.email,
 
 
-      login(
+        password:
+          form.password,
 
-        user,
 
-        tokens.accessToken,
+        sendVerificationEmail:true,
 
-        tokens.refreshToken
 
-      );
+      });
+
+
+
+
 
 
 
       router.push(
-        "/verify-email"
+        `/verify-email/sent?email=${encodeURIComponent(form.email)}`
       );
 
 
 
-    } catch (err: any) {
+    }
 
 
-      console.error(err);
+    catch(error:any){
+
+
+      console.error(
+        "Registration error:",
+        error
+      );
 
 
 
       setError(
 
-        err?.response?.data?.message ||
+        error?.response?.data?.message ||
+
         "Registration failed. Please try again."
 
       );
 
 
+    }
 
-    } finally {
+
+
+    finally{
 
 
       setLoading(false);
 
 
     }
+
 
 
   }
@@ -185,34 +236,40 @@ export default function RegisterPage() {
 
 
 
+
+
+
   return (
 
     <main
+
       className="
-        min-h-screen
-        flex
-        items-center
-        justify-center
-        bg-[#0B132B]
-        px-6
-        py-10
-        text-white
+      min-h-screen
+      flex
+      items-center
+      justify-center
+      bg-[#0B132B]
+      px-6
+      py-10
+      text-white
       "
+
     >
 
 
       <div
+
         className="
-          w-full
-          max-w-lg
-          rounded-2xl
-          border
-          border-white/10
-          bg-white/5
-          backdrop-blur-2xl
-          p-8
-          shadow-[0_8px_32px_rgba(0,0,0,0.3)]
+        w-full
+        max-w-lg
+        rounded-2xl
+        border
+        border-white/10
+        bg-white/5
+        backdrop-blur-2xl
+        p-8
         "
+
       >
 
 
@@ -222,13 +279,11 @@ export default function RegisterPage() {
           href="/"
 
           className="
-            flex
-            items-center
-            gap-2
-            text-sm
-            text-white/60
-            hover:text-white
-            mb-8
+          flex
+          gap-2
+          items-center
+          text-white/60
+          mb-8
           "
 
         >
@@ -243,35 +298,19 @@ export default function RegisterPage() {
 
 
 
-        <div className="mb-8">
+        <h1 className="text-3xl font-bold">
 
+          Create Account
 
-          <h1
-            className="
-              text-3xl
-              font-bold
-            "
-          >
-
-            Create Account
-
-          </h1>
+        </h1>
 
 
 
-          <p
-            className="
-              mt-2
-              text-white/60
-            "
-          >
+        <p className="mt-2 mb-8 text-white/60">
 
-            Join EngineeringOS and build your engineering workspace.
+          Join EngineeringOS and build your engineering workspace.
 
-          </p>
-
-
-        </div>
+        </p>
 
 
 
@@ -279,36 +318,36 @@ export default function RegisterPage() {
 
 
         {
-          error && (
+          error &&
 
-            <div
+          <div
 
-              className="
-                mb-5
-                rounded-xl
-                border
-                border-red-500/30
-                bg-red-500/10
-                px-4
-                py-3
-                text-sm
-                text-red-300
-              "
+            className="
+            mb-5
+            rounded-xl
+            bg-red-500/10
+            border
+            border-red-500/30
+            px-4
+            py-3
+            text-red-300
+            "
 
-            >
+          >
 
-              {
-                Array.isArray(error)
-                ?
-                error.join(", ")
-                :
-                error
-              }
+            {
+              Array.isArray(error)
+              ?
+              error.join(", ")
+              :
+              error
+            }
 
-            </div>
+          </div>
 
-          )
         }
+
+
 
 
 
@@ -320,26 +359,14 @@ export default function RegisterPage() {
 
           onSubmit={handleSubmit}
 
-          className="
-            space-y-5
-          "
+          className="space-y-5"
 
         >
 
 
 
 
-
-
-          <div
-            className="
-              grid
-              grid-cols-1
-              sm:grid-cols-2
-              gap-4
-            "
-          >
-
+          <div className="grid sm:grid-cols-2 gap-4">
 
 
             <InputField
@@ -373,9 +400,7 @@ export default function RegisterPage() {
             />
 
 
-
           </div>
-
 
 
 
@@ -388,17 +413,15 @@ export default function RegisterPage() {
 
             name="email"
 
-            placeholder="Email address"
-
             type="email"
+
+            placeholder="Email address"
 
             value={form.email}
 
             onChange={handleChange}
 
           />
-
-
 
 
 
@@ -451,22 +474,17 @@ export default function RegisterPage() {
 
           <button
 
-            type="submit"
-
             disabled={loading}
 
             className="
-              w-full
-              rounded-xl
-              bg-gradient-to-r
-              from-[#00D2FF]
-              to-[#FF6B00]
-              py-3
-              font-semibold
-              text-black
-              transition
-              hover:opacity-90
-              disabled:opacity-50
+            w-full
+            rounded-xl
+            bg-gradient-to-r
+            from-[#00D2FF]
+            to-[#FF6B00]
+            py-3
+            font-semibold
+            text-black
             "
 
           >
@@ -485,7 +503,6 @@ export default function RegisterPage() {
 
 
 
-
         </form>
 
 
@@ -493,17 +510,8 @@ export default function RegisterPage() {
 
 
 
+        <p className="mt-6 text-center text-white/60">
 
-        <p
-
-          className="
-            mt-6
-            text-center
-            text-sm
-            text-white/60
-          "
-
-        >
 
           Already have an account?
 
@@ -512,11 +520,7 @@ export default function RegisterPage() {
 
             href="/signin"
 
-            className="
-              ml-2
-              text-[#00D2FF]
-              hover:underline
-            "
+            className="ml-2 text-[#00D2FF]"
 
           >
 
@@ -526,7 +530,6 @@ export default function RegisterPage() {
 
 
         </p>
-
 
 
 
@@ -545,94 +548,62 @@ export default function RegisterPage() {
 
 
 
+
 function InputField({
-
   icon,
-
   name,
-
   placeholder,
-
   value,
-
   onChange,
-
   type="text",
-
-}: {
-
-  icon: React.ReactNode;
-
-  name:string;
-
-  placeholder:string;
-
-  value:string;
-
-  onChange:
-    (e:React.ChangeEvent<HTMLInputElement>)=>void;
-
-  type?:string;
-
-}) {
+}:any){
 
 
-  return (
+return (
 
-    <div className="relative">
+<div className="relative">
 
 
-      <div
+<div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00D2FF]">
 
-        className="
-          absolute
-          left-3
-          top-1/2
-          -translate-y-1/2
-          text-[#00D2FF]
-        "
+{icon}
 
-      >
-
-        {icon}
-
-      </div>
+</div>
 
 
 
-      <input
+<input
 
-        type={type}
+type={type}
 
-        name={name}
+name={name}
 
-        placeholder={placeholder}
+placeholder={placeholder}
 
-        value={value}
+value={value}
 
-        onChange={onChange}
+onChange={onChange}
 
-        required
+required
 
-        className="
-          w-full
-          rounded-xl
-          border
-          border-white/10
-          bg-black/20
-          py-3
-          pl-10
-          pr-4
-          outline-none
-          focus:border-[#00D2FF]
-        "
+className="
+w-full
+rounded-xl
+border
+border-white/10
+bg-black/20
+py-3
+pl-10
+pr-4
+"
 
-      />
+/>
 
 
-    </div>
+</div>
 
-  );
+);
+
 
 }
 
@@ -642,131 +613,88 @@ function InputField({
 
 
 
+
 function PasswordField({
-
-  name,
-
-  placeholder,
-
-  value,
-
-  visible,
-
-  setVisible,
-
-  onChange,
-
-}: {
-
-  name:string;
-
-  placeholder:string;
-
-  value:string;
-
-  visible:boolean;
-
-  setVisible:(value:boolean)=>void;
-
-  onChange:
-    (e:React.ChangeEvent<HTMLInputElement>)=>void;
-
-}) {
+name,
+placeholder,
+value,
+visible,
+setVisible,
+onChange,
+}:any){
 
 
-  return (
+return (
 
-    <div className="relative">
-
-
-      <Lock
-
-        size={18}
-
-        className="
-          absolute
-          left-3
-          top-1/2
-          -translate-y-1/2
-          text-[#FF6B00]
-        "
-
-      />
+<div className="relative">
 
 
+<Lock
 
-      <input
+size={18}
 
-        type={
-          visible
-          ?
-          "text"
-          :
-          "password"
-        }
+className="absolute left-3 top-1/2 -translate-y-1/2 text-[#FF6B00]"
 
-        name={name}
-
-        placeholder={placeholder}
-
-        value={value}
-
-        onChange={onChange}
-
-        required
-
-        className="
-          w-full
-          rounded-xl
-          border
-          border-white/10
-          bg-black/20
-          py-3
-          pl-10
-          pr-12
-          outline-none
-          focus:border-[#FF6B00]
-        "
-
-      />
+/>
 
 
 
 
-      <button
+<input
 
-        type="button"
+type={visible ? "text":"password"}
 
-        onClick={() =>
-          setVisible(!visible)
-        }
+name={name}
 
-        className="
-          absolute
-          right-3
-          top-1/2
-          -translate-y-1/2
-          text-white/60
-          hover:text-white
-        "
+placeholder={placeholder}
 
-      >
+value={value}
 
-        {
-          visible
-          ?
-          <EyeOff size={18}/>
-          :
-          <Eye size={18}/>
-        }
+onChange={onChange}
 
+required
 
-      </button>
+className="
+w-full
+rounded-xl
+border
+border-white/10
+bg-black/20
+py-3
+pl-10
+pr-12
+"
+
+/>
 
 
 
-    </div>
 
-  );
+<button
+
+type="button"
+
+onClick={()=>setVisible(!visible)}
+
+className="absolute right-3 top-1/2 -translate-y-1/2"
+
+>
+
+{
+visible
+?
+<EyeOff size={18}/>
+:
+<Eye size={18}/>
+}
+
+</button>
+
+
+
+</div>
+
+);
+
 
 }

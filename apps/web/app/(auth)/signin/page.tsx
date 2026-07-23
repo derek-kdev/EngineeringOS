@@ -23,7 +23,9 @@ import {
 } from "lucide-react";
 
 
-import api from "@/lib/api";
+import {
+  authService,
+} from "@/services/auth.service";
 
 
 import {
@@ -38,14 +40,14 @@ export default function SignInPage(){
 
 
   const router =
-  useRouter();
+    useRouter();
 
 
 
   const {
     login,
   } =
-  useAuth();
+    useAuth();
 
 
 
@@ -55,7 +57,7 @@ export default function SignInPage(){
     email,
     setEmail,
   ] =
-  useState("");
+    useState("");
 
 
 
@@ -63,7 +65,7 @@ export default function SignInPage(){
     password,
     setPassword,
   ] =
-  useState("");
+    useState("");
 
 
 
@@ -71,7 +73,7 @@ export default function SignInPage(){
     showPassword,
     setShowPassword,
   ] =
-  useState(false);
+    useState(false);
 
 
 
@@ -79,7 +81,7 @@ export default function SignInPage(){
     loading,
     setLoading,
   ] =
-  useState(false);
+    useState(false);
 
 
 
@@ -87,7 +89,8 @@ export default function SignInPage(){
     error,
     setError,
   ] =
-  useState("");
+    useState("");
+
 
 
 
@@ -104,10 +107,10 @@ export default function SignInPage(){
     e.preventDefault();
 
 
-
     setError("");
 
     setLoading(true);
+
 
 
 
@@ -116,19 +119,14 @@ export default function SignInPage(){
 
 
       const response =
-      await api.post(
-
-        "/auth/login",
-
-        {
+        await authService.login({
 
           email,
 
           password,
 
-        }
+        });
 
-      );
 
 
 
@@ -136,17 +134,17 @@ export default function SignInPage(){
 
 
       const user =
-      response.data.user;
+        response.user;
 
 
 
       const accessToken =
-      response.data.tokens.accessToken;
+        response.tokens.accessToken;
 
 
 
       const refreshToken =
-      response.data.tokens.refreshToken;
+        response.tokens.refreshToken;
 
 
 
@@ -187,6 +185,7 @@ export default function SignInPage(){
 
 
 
+
       router.replace(
         "/dashboard"
       );
@@ -195,6 +194,7 @@ export default function SignInPage(){
 
 
     }
+
 
     catch(error:any){
 
@@ -339,7 +339,6 @@ export default function SignInPage(){
           Sign in to your EngineeringOS workspace.
 
         </p>
-
 
 
 

@@ -1,6 +1,5 @@
 "use client";
 
-
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -46,6 +45,7 @@ interface AuthState {
   refreshToken:string | null;
 
 
+
   hydrated:boolean;
 
 
@@ -53,10 +53,14 @@ interface AuthState {
 
 
 
+
+
   setHydrated:(value:boolean)=>void;
 
 
   setLoading:(value:boolean)=>void;
+
+
 
 
 
@@ -72,7 +76,27 @@ interface AuthState {
 
 
 
-  setUser:(user:User|null)=>void;
+
+
+  setUser:(
+
+    user:User|null
+
+  )=>void;
+
+
+
+
+
+  setTokens:(
+
+    accessToken:string,
+
+    refreshToken:string
+
+  )=>void;
+
+
 
 
 
@@ -80,7 +104,11 @@ interface AuthState {
 
 
 
+
+
   logout:()=>Promise<void>;
+
+
 
 
 
@@ -94,12 +122,17 @@ interface AuthState {
 
 
 
+
+
 export const useAuthStore =
 create<AuthState>()(
 
 persist(
 
+
+
 (set,get)=>({
+
 
 
 
@@ -121,13 +154,18 @@ loading:false,
 
 
 
+
+
 setHydrated:(value)=>
+
 
 set({
 
-hydrated:value
+  hydrated:value,
 
 }),
+
+
 
 
 
@@ -135,11 +173,13 @@ hydrated:value
 
 setLoading:(value)=>
 
+
 set({
 
-loading:value
+  loading:value,
 
 }),
+
 
 
 
@@ -148,21 +188,22 @@ loading:value
 
 login:(
 
-user,
+  user,
 
-accessToken,
+  accessToken,
 
-refreshToken
+  refreshToken,
 
 )=>
 
+
 set({
 
-user,
+  user,
 
-accessToken,
+  accessToken,
 
-refreshToken
+  refreshToken,
 
 }),
 
@@ -170,11 +211,36 @@ refreshToken
 
 
 
+
+
 setUser:(user)=>
+
 
 set({
 
-user
+  user,
+
+}),
+
+
+
+
+
+
+
+setTokens:(
+
+  accessToken,
+
+  refreshToken,
+
+)=>
+
+set({
+
+  accessToken,
+
+  refreshToken,
 
 }),
 
@@ -189,11 +255,11 @@ clearAuth:()=>
 
 set({
 
-user:null,
+  user:null,
 
-accessToken:null,
+  accessToken:null,
 
-refreshToken:null
+  refreshToken:null,
 
 }),
 
@@ -209,30 +275,37 @@ logout:async()=>{
 try{
 
 
-await api.post(
-"/auth/logout"
-);
+  await api.post(
+    "/auth/logout"
+  );
 
 
-}catch(error){
+}
+
+catch(error){
 
 
-console.warn(
-"Logout ignored:",
-error
-);
+  console.warn(
+
+    "Logout request failed:",
+
+    error
+
+  );
+
+
+}
+
+finally{
+
+
+  get().clearAuth();
 
 
 }
 
 
-
-get().clearAuth();
-
-
-
 },
-
 
 
 
@@ -243,19 +316,25 @@ get().clearAuth();
 isAuthenticated:()=>{
 
 
-const state=get();
+const state =
+get();
+
 
 
 return Boolean(
 
-state.user &&
+  state.hydrated &&
 
-state.accessToken
+  state.user &&
+
+  state.accessToken
 
 );
 
 
 },
+
+
 
 
 
@@ -269,16 +348,23 @@ name:"engineeringos-auth",
 
 
 
-onRehydrateStorage:()=>()=>{
 
 
-useAuthStore
-.getState()
-.setHydrated(true);
+onRehydrateStorage:()=>{
 
 
-}
+return ()=>{
 
+
+  useAuthStore
+    .getState()
+    .setHydrated(true);
+
+
+};
+
+
+},
 
 
 }

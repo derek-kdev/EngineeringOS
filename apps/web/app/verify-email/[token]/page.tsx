@@ -1,116 +1,253 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import api from "@/lib/api";
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
+
+import {
+  authService,
+} from "@/services/auth.service";
 
 
-export default function VerifyTokenPage(){
 
- const params = useParams();
- const router = useRouter();
-
- const [message,setMessage]=useState(
-   "Verifying your email..."
- );
+export default function VerifyEmailPage() {
 
 
- useEffect(()=>{
+  const router = useRouter();
+
+  const searchParams = useSearchParams();
 
 
- async function verify(){
 
-   try{
-
-
-    await api.get(
-      `/auth/verify-email/${params.token}`
+  const [message, setMessage] =
+    useState(
+      "Verifying your email..."
     );
 
 
-    setMessage(
-      "Email verified successfully. Redirecting..."
-    );
-
-
-    setTimeout(()=>{
-      router.push("/signin");
-    },2000);
+  const [processing, setProcessing] =
+    useState(false);
 
 
 
-   }catch(error){
 
 
-    setMessage(
-      "Verification link is invalid or expired."
-    );
+  useEffect(() => {
 
 
-   }
+    async function verifyEmail() {
 
 
- }
+      if (processing) {
 
+        return;
 
- verify();
-
-
- },[params.token,router]);
+      }
 
 
 
- return (
 
-  <main
-   className="
-   min-h-screen
-   flex
-   items-center
-   justify-center
-   bg-[#0B132B]
-   text-white
-   "
-  >
+      const token =
+        searchParams.get("token");
 
-   <div
-    className="
-    rounded-3xl
-    bg-white/5
-    border
-    border-white/10
-    backdrop-blur-xl
-    p-10
-    text-center
-    "
-   >
 
-    <h1
-     className="
-     text-2xl
-     font-bold
-     "
+
+
+
+      if (!token) {
+
+
+        setMessage(
+          "Invalid verification link."
+        );
+
+
+        return;
+
+
+      }
+
+
+
+
+      setProcessing(true);
+
+
+
+
+
+      try {
+
+
+        await authService.verifyEmail({
+
+          token,
+
+        });
+
+
+
+
+
+        setMessage(
+
+          "Email verified successfully. Redirecting to sign in..."
+
+        );
+
+
+
+
+
+        setTimeout(() => {
+
+
+          router.replace(
+            "/signin"
+          );
+
+
+        }, 2000);
+
+
+
+
+
+
+      } catch (error) {
+
+
+        console.error(
+
+          "Email verification failed:",
+
+          error
+
+        );
+
+
+
+
+        setMessage(
+
+          "Verification link is invalid or expired."
+
+        );
+
+
+
+      }
+
+
+    }
+
+
+
+
+
+    verifyEmail();
+
+
+
+
+  }, [
+
+    searchParams,
+
+    router,
+
+    processing,
+
+  ]);
+
+
+
+
+
+
+
+  return (
+
+    <main
+
+      className="
+        min-h-screen
+        flex
+        items-center
+        justify-center
+        bg-[#0B132B]
+        text-white
+        px-6
+      "
+
     >
-      EngineeringOS
-    </h1>
 
 
-    <p
-     className="
-     mt-4
-     text-white/70
-     "
-    >
-      {message}
-    </p>
+
+      <div
+
+        className="
+          rounded-3xl
+          bg-white/5
+          border
+          border-white/10
+          backdrop-blur-xl
+          p-10
+          text-center
+          max-w-md
+          w-full
+        "
+
+      >
 
 
-   </div>
+
+        <h1
+
+          className="
+            text-3xl
+            font-bold
+          "
+
+        >
+
+          EngineeringOS
+
+        </h1>
 
 
-  </main>
 
- );
+
+
+        <p
+
+          className="
+            mt-5
+            text-white/70
+          "
+
+        >
+
+          {message}
+
+        </p>
+
+
+
+
+      </div>
+
+
+
+    </main>
+
+  );
 
 
 }

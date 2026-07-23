@@ -1,11 +1,9 @@
 "use client";
 
-
 import {
   useEffect,
   useState,
 } from "react";
-
 
 import {
   useRouter,
@@ -24,16 +22,15 @@ import {
 
 
 
-
 export default function AuthGuard({
 
   children,
 
-}: {
+}:{
 
-  children: React.ReactNode;
+  children:React.ReactNode;
 
-}) {
+}){
 
 
   const router =
@@ -43,44 +40,42 @@ export default function AuthGuard({
 
   const user =
     useAuthStore(
-      (state) => state.user
+      state=>state.user
     );
+
 
 
   const accessToken =
     useAuthStore(
-      (state) => state.accessToken
+      state=>state.accessToken
     );
+
 
 
   const hydrated =
     useAuthStore(
-      (state) => state.hydrated
+      state=>state.hydrated
     );
+
 
 
   const setUser =
     useAuthStore(
-      (state) => state.setUser
+      state=>state.setUser
     );
+
 
 
   const clearAuth =
     useAuthStore(
-      (state) => state.clearAuth
+      state=>state.clearAuth
     );
+
 
 
   const setLoading =
     useAuthStore(
-      (state) => state.setLoading
-    );
-
-
-
-  const setHydrated =
-    useAuthStore(
-      (state) => state.setHydrated
+      state=>state.setLoading
     );
 
 
@@ -94,45 +89,12 @@ export default function AuthGuard({
 
 
 
-  /*
-  |--------------------------------------------------------------------------
-  | Ensure Zustand hydration
-  |--------------------------------------------------------------------------
-  */
-
 
   useEffect(()=>{
 
 
-    if(
-      typeof window !== "undefined"
-    ){
+    async function validate(){
 
-      setHydrated(true);
-
-    }
-
-
-  },[setHydrated]);
-
-
-
-
-
-
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | Validate Authentication
-  |--------------------------------------------------------------------------
-  */
-
-
-  useEffect(()=>{
-
-
-    async function validateSession(){
 
 
       if(!hydrated){
@@ -144,12 +106,6 @@ export default function AuthGuard({
 
 
 
-
-      /*
-      |--------------------------------------------------------------------------
-      | No access token
-      |--------------------------------------------------------------------------
-      */
 
 
       if(!accessToken){
@@ -164,7 +120,6 @@ export default function AuthGuard({
 
 
         return;
-
 
       }
 
@@ -181,15 +136,18 @@ export default function AuthGuard({
 
 
 
-        const currentUser =
+
+        const profile =
           await authService.getMe();
 
 
 
 
+
         setUser(
-          currentUser
+          profile
         );
+
 
 
 
@@ -198,9 +156,13 @@ export default function AuthGuard({
       catch(error){
 
 
+
         console.error(
-          "Authentication validation failed:",
+
+          "Session expired:",
+
           error
+
         );
 
 
@@ -229,12 +191,12 @@ export default function AuthGuard({
       }
 
 
+
     }
 
 
 
-
-    validateSession();
+    validate();
 
 
 
@@ -262,13 +224,6 @@ export default function AuthGuard({
 
 
 
-  /*
-  |--------------------------------------------------------------------------
-  | Loading State
-  |--------------------------------------------------------------------------
-  */
-
-
   if(
     !hydrated ||
     checking
@@ -277,11 +232,11 @@ export default function AuthGuard({
 
     return (
 
-      <div
+      <main
 
         className="
-          flex
           min-h-screen
+          flex
           items-center
           justify-center
           bg-[#050816]
@@ -293,22 +248,21 @@ export default function AuthGuard({
         <div className="text-center">
 
 
-          <h2
+          <h1
             className="
-              mb-4
               text-2xl
-              font-semibold
+              font-bold
             "
           >
 
             EngineeringOS
 
-          </h2>
-
+          </h1>
 
 
           <p
             className="
+              mt-3
               text-white/60
             "
           >
@@ -318,11 +272,10 @@ export default function AuthGuard({
           </p>
 
 
-
         </div>
 
 
-      </div>
+      </main>
 
     );
 
@@ -333,15 +286,9 @@ export default function AuthGuard({
 
 
 
-  return (
 
-    <>
 
-      {children}
-
-    </>
-
-  );
+  return children;
 
 
 }
