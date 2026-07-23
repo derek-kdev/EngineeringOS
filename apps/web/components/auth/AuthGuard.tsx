@@ -9,11 +9,9 @@ import {
   useRouter,
 } from "next/navigation";
 
-
 import {
   useAuthStore,
 } from "@/stores/auth.store";
-
 
 import {
   authService,
@@ -22,15 +20,16 @@ import {
 
 
 
+
 export default function AuthGuard({
 
   children,
 
-}:{
+}: {
 
-  children:React.ReactNode;
+  children: React.ReactNode;
 
-}){
+}) {
 
 
   const router =
@@ -38,77 +37,59 @@ export default function AuthGuard({
 
 
 
-  const user =
+  const hydrated =
     useAuthStore(
-      state=>state.user
+      (state) => state.hydrated
     );
-
 
 
   const accessToken =
     useAuthStore(
-      state=>state.accessToken
+      (state) => state.accessToken
     );
-
-
-
-  const hydrated =
-    useAuthStore(
-      state=>state.hydrated
-    );
-
 
 
   const setUser =
     useAuthStore(
-      state=>state.setUser
+      (state) => state.setUser
     );
-
 
 
   const clearAuth =
     useAuthStore(
-      state=>state.clearAuth
+      (state) => state.clearAuth
     );
-
 
 
   const setLoading =
     useAuthStore(
-      state=>state.setLoading
+      (state) => state.setLoading
     );
 
 
 
-  const [checking,setChecking] =
+  const [checking, setChecking] =
     useState(true);
 
 
 
 
 
+  useEffect(() => {
+
+
+    if (!hydrated) {
+
+      return;
+
+    }
 
 
 
-  useEffect(()=>{
+    async function validateSession() {
 
 
-    async function validate(){
-
-
-
-      if(!hydrated){
-
-        return;
-
-      }
-
-
-
-
-
-
-      if(!accessToken){
+      if (!accessToken) {
 
 
         clearAuth();
@@ -119,6 +100,9 @@ export default function AuthGuard({
         );
 
 
+        setChecking(false);
+
+
         return;
 
       }
@@ -127,20 +111,15 @@ export default function AuthGuard({
 
 
 
-
-
-      try{
+      try {
 
 
         setLoading(true);
 
 
 
-
         const profile =
           await authService.getMe();
-
-
 
 
 
@@ -150,25 +129,16 @@ export default function AuthGuard({
 
 
 
-
-      }
-
-      catch(error){
-
+      } catch(error) {
 
 
         console.error(
-
-          "Session expired:",
-
+          "Authentication validation failed:",
           error
-
         );
 
 
-
         clearAuth();
-
 
 
         router.replace(
@@ -176,10 +146,7 @@ export default function AuthGuard({
         );
 
 
-
-      }
-
-      finally{
+      } finally {
 
 
         setLoading(false);
@@ -191,16 +158,17 @@ export default function AuthGuard({
       }
 
 
-
     }
 
 
 
-    validate();
+
+
+    validateSession();
 
 
 
-  },[
+  }, [
 
     hydrated,
 
@@ -222,12 +190,13 @@ export default function AuthGuard({
 
 
 
+  if (
 
-
-  if(
     !hydrated ||
+
     checking
-  ){
+
+  ) {
 
 
     return (
@@ -249,10 +218,12 @@ export default function AuthGuard({
 
 
           <h1
+
             className="
               text-2xl
               font-bold
             "
+
           >
 
             EngineeringOS
@@ -260,16 +231,20 @@ export default function AuthGuard({
           </h1>
 
 
+
           <p
+
             className="
               mt-3
               text-white/60
             "
+
           >
 
             Loading workspace...
 
           </p>
+
 
 
         </div>
@@ -279,9 +254,7 @@ export default function AuthGuard({
 
     );
 
-
   }
-
 
 
 

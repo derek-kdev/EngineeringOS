@@ -2,33 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  FolderKanban,
-  Lightbulb,
-  Library,
-  Calculator,
-  FlaskConical,
-  Users,
-  PanelLeftClose,
-  PanelLeftOpen,
-} from "lucide-react";
-
-interface NavItem {
-  name: string;
-  href: string;
-  icon: React.ReactNode;
-}
-
-const navItems: NavItem[] = [
-  { name: "Dashboard", href: "/dashboard", icon: <LayoutDashboard size={18} /> },
-  { name: "Ideas Hub", href: "/dashboard/ideas", icon: <Lightbulb size={18} /> },
-  { name: "Projects", href: "/dashboard/projects", icon: <FolderKanban size={18} /> },
-  { name: "Research Library", href: "/dashboard/research", icon: <Library size={18} /> },
-  { name: "Calculations", href: "/dashboard/calculations", icon: <Calculator size={18} /> },
-  { name: "Prototype Lab", href: "/dashboard/prototype", icon: <FlaskConical size={18} /> },
-  { name: "Community", href: "/dashboard/community", icon: <Users size={18} /> },
-];
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { NAV_ITEMS } from "@/constants/dashboard/navigation";
+import { isAdminRole } from "@/constants/dashboard/roles";
 
 interface DashboardSidebarProps {
   expanded: boolean;
@@ -40,6 +17,11 @@ interface DashboardSidebarProps {
 // apart (this was the cause of the overlap/misalignment bugs).
 export default function DashboardSidebar({ expanded, setExpanded }: DashboardSidebarProps) {
   const pathname = usePathname();
+  const { user } = useAuth();
+
+  const visibleItems = NAV_ITEMS.filter(
+    (item) => !item.roles || isAdminRole(user?.role),
+  );
 
   return (
     <aside
@@ -60,11 +42,13 @@ export default function DashboardSidebar({ expanded, setExpanded }: DashboardSid
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 space-y-0.5">
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const isActive =
             item.href === "/dashboard"
               ? pathname === "/dashboard"
               : pathname?.startsWith(item.href);
+
+          const isAdminItem = !!item.roles;
 
           return (
             <Link
@@ -80,6 +64,7 @@ export default function DashboardSidebar({ expanded, setExpanded }: DashboardSid
                     ? "bg-white/10 text-white"
                     : "text-white/70 hover:bg-white/5 hover:text-white"
                 }
+                ${isAdminItem ? "mt-2 border-t border-white/10 pt-3" : ""}
               `}
             >
               <span className="flex-shrink-0">{item.icon}</span>

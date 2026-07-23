@@ -10,64 +10,40 @@ import {
 
 
 export interface VerifyEmailPayload {
-
-  token:string;
-
+  token: string;
 }
-
 
 
 export interface ResendVerificationPayload {
-
-  email:string;
-
+  email: string;
 }
-
 
 
 export interface ForgotPasswordPayload {
-
-  email:string;
-
+  email: string;
 }
-
 
 
 export interface ResetPasswordPayload {
-
-  token:string;
-
-  newPassword:string;
-
+  token: string;
+  newPassword: string;
 }
-
 
 
 export interface ChangePasswordPayload {
-
-  currentPassword:string;
-
-  newPassword:string;
-
+  currentPassword: string;
+  newPassword: string;
 }
-
 
 
 export interface RefreshTokenPayload {
-
-  refreshToken:string;
-
+  refreshToken: string;
 }
-
 
 
 export interface MessageResponse {
-
-  message:string;
-
+  message: string;
 }
-
-
 
 
 
@@ -78,9 +54,8 @@ export const authService = {
 
 
   register: async(
-    data:RegisterPayload
-  ):Promise<RegisterResponse>=>{
-
+    data: RegisterPayload
+  ): Promise<RegisterResponse> => {
 
     const response =
       await api.post<RegisterResponse>(
@@ -88,9 +63,7 @@ export const authService = {
         data
       );
 
-
     return response.data;
-
 
   },
 
@@ -98,12 +71,9 @@ export const authService = {
 
 
 
-
-
   login: async(
-    data:LoginPayload
-  ):Promise<LoginResponse>=>{
-
+    data: LoginPayload
+  ): Promise<LoginResponse> => {
 
     const response =
       await api.post<LoginResponse>(
@@ -111,9 +81,7 @@ export const authService = {
         data
       );
 
-
     return response.data;
-
 
   },
 
@@ -121,19 +89,14 @@ export const authService = {
 
 
 
-
-
-  logout: async():Promise<MessageResponse>=>{
-
+  logout: async(): Promise<MessageResponse> => {
 
     const response =
       await api.post<MessageResponse>(
         "/auth/logout"
       );
 
-
     return response.data;
-
 
   },
 
@@ -141,19 +104,14 @@ export const authService = {
 
 
 
-
-
-  getMe: async()=>{
-
+  getMe: async() => {
 
     const response =
       await api.get(
         "/auth/me"
       );
 
-
     return response.data;
-
 
   },
 
@@ -161,12 +119,9 @@ export const authService = {
 
 
 
-
-
   refreshToken: async(
-    data:RefreshTokenPayload
-  )=>{
-
+    data: RefreshTokenPayload
+  ) => {
 
     const response =
       await api.post(
@@ -174,9 +129,7 @@ export const authService = {
         data
       );
 
-
     return response.data;
-
 
   },
 
@@ -184,12 +137,9 @@ export const authService = {
 
 
 
-
-
   verifyEmail: async(
-    data:VerifyEmailPayload
-  ):Promise<MessageResponse>=>{
-
+    data: VerifyEmailPayload
+  ): Promise<MessageResponse> => {
 
     const response =
       await api.post<MessageResponse>(
@@ -197,9 +147,7 @@ export const authService = {
         data
       );
 
-
     return response.data;
-
 
   },
 
@@ -207,12 +155,9 @@ export const authService = {
 
 
 
-
-
   resendVerification: async(
-    data:ResendVerificationPayload
-  ):Promise<MessageResponse>=>{
-
+    data: ResendVerificationPayload
+  ): Promise<MessageResponse> => {
 
     const response =
       await api.post<MessageResponse>(
@@ -220,9 +165,7 @@ export const authService = {
         data
       );
 
-
     return response.data;
-
 
   },
 
@@ -230,12 +173,9 @@ export const authService = {
 
 
 
-
-
   forgotPassword: async(
-    data:ForgotPasswordPayload
-  ):Promise<MessageResponse>=>{
-
+    data: ForgotPasswordPayload
+  ): Promise<MessageResponse> => {
 
     const response =
       await api.post<MessageResponse>(
@@ -243,9 +183,7 @@ export const authService = {
         data
       );
 
-
     return response.data;
-
 
   },
 
@@ -253,12 +191,9 @@ export const authService = {
 
 
 
-
-
   resetPassword: async(
-    data:ResetPasswordPayload
-  ):Promise<MessageResponse>=>{
-
+    data: ResetPasswordPayload
+  ): Promise<MessageResponse> => {
 
     const response =
       await api.patch<MessageResponse>(
@@ -266,9 +201,7 @@ export const authService = {
         data
       );
 
-
     return response.data;
-
 
   },
 
@@ -276,12 +209,9 @@ export const authService = {
 
 
 
-
-
   changePassword: async(
-    data:ChangePasswordPayload
-  ):Promise<MessageResponse>=>{
-
+    data: ChangePasswordPayload
+  ): Promise<MessageResponse> => {
 
     const response =
       await api.patch<MessageResponse>(
@@ -289,9 +219,7 @@ export const authService = {
         data
       );
 
-
     return response.data;
-
 
   },
 

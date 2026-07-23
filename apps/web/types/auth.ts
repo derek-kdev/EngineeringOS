@@ -1,35 +1,26 @@
 export interface RegisterPayload {
 
+  email: string;
 
-  email:string;
+  firstName: string;
 
+  lastName: string;
 
-  firstName:string;
-
-
-  lastName:string;
-
-
-  password:string;
-
+  password: string;
 
   organization?: {
 
-    create?:boolean;
+    create?: boolean;
 
-    name?:string;
+    name?: string;
 
-    slug?:string;
+    slug?: string;
 
   };
 
-
-  sendVerificationEmail?:boolean;
-
+  sendVerificationEmail?: boolean;
 
 }
-
-
 
 
 
@@ -37,17 +28,11 @@ export interface RegisterPayload {
 
 export interface LoginPayload {
 
+  email: string;
 
-  email:string;
-
-
-  password:string;
-
+  password: string;
 
 }
-
-
-
 
 
 
@@ -55,41 +40,27 @@ export interface LoginPayload {
 
 export interface AuthUser {
 
+  id: string;
 
-  id:string;
+  email: string;
 
+  firstName: string;
 
-  email:string;
+  lastName: string;
 
+  displayName?: string | null;
 
-  firstName:string;
+  avatarUrl?: string | null;
 
+  role?: string;
 
-  lastName:string;
+  emailVerifiedAt?: string | null;
 
+  createdAt?: string;
 
-  displayName?:string | null;
-
-
-  avatarUrl?:string | null;
-
-
-  role?:string;
-
-
-  emailVerifiedAt?:string | null;
-
-
-  createdAt?:string;
-
-
-  updatedAt?:string;
-
+  updatedAt?: string;
 
 }
-
-
-
 
 
 
@@ -97,80 +68,65 @@ export interface AuthUser {
 
 export interface AuthTokens {
 
+  accessToken: string;
 
-  accessToken:string;
-
-
-  refreshToken:string;
-
+  refreshToken: string;
 
 }
 
 
 
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| Register Response
-|--------------------------------------------------------------------------
-|
-| User account created.
-| Verification required before login.
-|
-|--------------------------------------------------------------------------
-*/
 
 
 export interface RegisterResponse {
 
+  user: AuthUser;
 
-  user:AuthUser;
+  tokens?: AuthTokens;
 
-
-  message?:string;
-
+  message?: string;
 
 }
 
 
 
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| Login Response
-|--------------------------------------------------------------------------
-|
-| Returned only after successful authentication.
-|
-|--------------------------------------------------------------------------
-*/
 
 
 export interface LoginResponse {
 
+  user: AuthUser;
 
-  user:AuthUser;
-
-
-  tokens:AuthTokens;
-
+  tokens: AuthTokens;
 
 }
 
 
 
 
+
+export interface UserProfileResponse {
+
+  id: string;
+
+  email: string;
+
+  firstName: string;
+
+  lastName: string;
+
+  displayName?: string | null;
+
+  avatarUrl?: string | null;
+
+  role?: string;
+
+  emailVerifiedAt?: string | null;
+
+  createdAt?: string;
+
+  updatedAt?: string;
+
+}
 
 
 
@@ -178,14 +134,9 @@ export interface LoginResponse {
 
 export interface VerifyEmailPayload {
 
-
-  token:string;
-
+  token: string;
 
 }
-
-
-
 
 
 
@@ -193,14 +144,9 @@ export interface VerifyEmailPayload {
 
 export interface ResendVerificationPayload {
 
-
-  email:string;
-
+  email: string;
 
 }
-
-
-
 
 
 
@@ -208,14 +154,9 @@ export interface ResendVerificationPayload {
 
 export interface ForgotPasswordPayload {
 
-
-  email:string;
-
+  email: string;
 
 }
-
-
-
 
 
 
@@ -223,17 +164,11 @@ export interface ForgotPasswordPayload {
 
 export interface ResetPasswordPayload {
 
+  token: string;
 
-  token:string;
-
-
-  newPassword:string;
-
+  newPassword: string;
 
 }
-
-
-
 
 
 
@@ -241,12 +176,9 @@ export interface ResetPasswordPayload {
 
 export interface ChangePasswordPayload {
 
+  currentPassword: string;
 
-  currentPassword:string;
-
-
-  newPassword:string;
-
+  newPassword: string;
 
 }
 
@@ -254,13 +186,18 @@ export interface ChangePasswordPayload {
 
 
 
-
-
-
 export interface RefreshTokenPayload {
 
+  refreshToken: string;
 
-  refreshToken:string;
+}
 
+
+
+
+
+export interface MessageResponse {
+
+  message: string;
 
 }

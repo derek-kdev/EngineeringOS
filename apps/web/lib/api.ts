@@ -15,11 +15,8 @@ const api = axios.create({
   withCredentials: true,
 
   headers: {
-
     "Content-Type": "application/json",
-
     Accept: "application/json",
-
   },
 
   timeout: 30000,
@@ -30,96 +27,7 @@ const api = axios.create({
 
 /*
 |--------------------------------------------------------------------------
-| Access Token Resolver
-|--------------------------------------------------------------------------
-|
-| Retrieves JWT access token from:
-|
-| 1. Zustand memory state
-| 2. Persisted Zustand storage
-|
-|--------------------------------------------------------------------------
-*/
-
-function getAccessToken(): string | null {
-
-
-  const zustandToken =
-    useAuthStore.getState().accessToken;
-
-
-
-  if(zustandToken){
-
-    return zustandToken;
-
-  }
-
-
-
-  if(typeof window === "undefined"){
-
-    return null;
-
-  }
-
-
-
-  try {
-
-
-    const storedAuth =
-      localStorage.getItem(
-        "engineeringos-auth"
-      );
-
-
-
-    if(!storedAuth){
-
-      return null;
-
-    }
-
-
-
-    const parsed =
-      JSON.parse(storedAuth);
-
-
-
-    return (
-      parsed?.state?.accessToken ??
-      null
-    );
-
-
-
-  } catch(error){
-
-
-    console.error(
-      "Unable to read authentication storage:",
-      error
-    );
-
-
-    return null;
-
-  }
-
-
-}
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| Request Interceptor
+| Attach Access Token
 |--------------------------------------------------------------------------
 */
 
@@ -127,20 +35,18 @@ api.interceptors.request.use(
 
   (
     config: InternalAxiosRequestConfig
-  )=>{
+  ) => {
 
 
     const token =
-      getAccessToken();
+      useAuthStore.getState().accessToken;
 
 
 
     if(token){
 
-
       config.headers.Authorization =
         `Bearer ${token}`;
-
 
     }
 
@@ -148,15 +54,12 @@ api.interceptors.request.use(
 
     return config;
 
-
   },
 
 
   (error)=>{
 
-
     return Promise.reject(error);
-
 
   }
 
@@ -166,17 +69,9 @@ api.interceptors.request.use(
 
 
 
-
-
 /*
 |--------------------------------------------------------------------------
-| Response Interceptor
-|--------------------------------------------------------------------------
-|
-| Handles API errors globally.
-|
-| Refresh-token flow will be added here later.
-|
+| Response Handler
 |--------------------------------------------------------------------------
 */
 
@@ -184,16 +79,12 @@ api.interceptors.response.use(
 
   (response)=>{
 
-
     return response;
-
 
   },
 
 
-  async (
-    error: AxiosError
-  )=>{
+  async(error:AxiosError)=>{
 
 
     const status =
@@ -204,32 +95,29 @@ api.interceptors.response.use(
     if(status === 401){
 
 
+      const requestUrl =
+        error.config?.url;
+
+
+
       console.warn(
         "Unauthorized request:",
-        error.config?.url
+        requestUrl
       );
 
 
+      /*
+      |--------------------------------------------------------------------------
+      | Clear invalid authentication state
+      |--------------------------------------------------------------------------
+      */
+
+      useAuthStore
+        .getState()
+        .clearAuth();
+
+
     }
-
-
-
-    console.error(
-      "API ERROR STATUS:",
-      status
-    );
-
-
-    console.error(
-      "API ERROR URL:",
-      error.config?.url
-    );
-
-
-    console.error(
-      "API ERROR DATA:",
-      error.response?.data
-    );
 
 
 

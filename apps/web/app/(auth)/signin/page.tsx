@@ -1,18 +1,10 @@
 "use client";
 
-
-import {
-  useState,
-} from "react";
-
+import { useState } from "react";
 
 import Link from "next/link";
 
-
-import {
-  useRouter,
-} from "next/navigation";
-
+import { useRouter } from "next/navigation";
 
 import {
   ArrowLeft,
@@ -22,230 +14,104 @@ import {
   Lock,
 } from "lucide-react";
 
+import { authService } from "@/services/auth.service";
 
-import {
-  authService,
-} from "@/services/auth.service";
+import { useAuth } from "@/hooks/useAuth";
 
+import { useAuthStore } from "@/stores/auth.store";
 
-import {
-  useAuth,
-} from "@/hooks/useAuth";
+export default function SignInPage() {
+  const router = useRouter();
 
+  const { login } = useAuth();
 
+  const setLoading = useAuthStore(
+    (state) => state.setLoading
+  );
 
+  const [email, setEmail] = useState("");
 
+  const [password, setPassword] = useState("");
 
-export default function SignInPage(){
-
-
-  const router =
-    useRouter();
-
-
-
-  const {
-    login,
-  } =
-    useAuth();
-
-
-
-
-
-  const [
-    email,
-    setEmail,
-  ] =
-    useState("");
-
-
-
-  const [
-    password,
-    setPassword,
-  ] =
-    useState("");
-
-
-
-  const [
-    showPassword,
-    setShowPassword,
-  ] =
+  const [showPassword, setShowPassword] =
     useState(false);
 
-
-
-  const [
-    loading,
-    setLoading,
-  ] =
+  const [loading, setLocalLoading] =
     useState(false);
 
-
-
-  const [
-    error,
-    setError,
-  ] =
+  const [error, setError] =
     useState("");
-
-
-
-
-
-
 
 
 
   async function handleSubmit(
-    e:React.FormEvent<HTMLFormElement>
-  ){
-
-
+    e: React.FormEvent<HTMLFormElement>
+  ) {
     e.preventDefault();
 
-
     setError("");
+
+    setLocalLoading(true);
 
     setLoading(true);
 
 
-
-
-
-    try{
-
-
+    try {
       const response =
         await authService.login({
-
-          email,
-
+          email: email.trim().toLowerCase(),
           password,
-
         });
 
 
-
-
-
-
-
-      const user =
-        response.user;
-
-
-
-      const accessToken =
-        response.tokens.accessToken;
-
-
-
-      const refreshToken =
-        response.tokens.refreshToken;
-
-
-
-
-
-
-
-      if(
-        !user ||
-        !accessToken ||
-        !refreshToken
-      ){
-
+      if (
+        !response?.user ||
+        !response?.tokens?.accessToken ||
+        !response?.tokens?.refreshToken
+      ) {
         throw new Error(
-          "Invalid login response"
+          "Invalid authentication response"
         );
-
       }
 
 
-
-
-
-
-
       login(
-
-        user,
-
-        accessToken,
-
-        refreshToken,
-
+        response.user,
+        response.tokens.accessToken,
+        response.tokens.refreshToken
       );
 
 
+      router.replace("/dashboard");
 
 
-
-
-
-      router.replace(
-        "/dashboard"
-      );
-
-
-
-
-    }
-
-
-    catch(error:any){
-
-
+    } catch (error: any) {
 
       console.error(
-        "Login error:",
+        "Login failed:",
         error
       );
 
 
-
-
       setError(
-
         error?.response?.data?.message ||
-
-        "Invalid email or password"
-
+        "Unable to sign in. Please check your credentials."
       );
 
 
+    } finally {
 
-    }
-
-
-
-    finally{
-
+      setLocalLoading(false);
 
       setLoading(false);
 
-
     }
-
-
-
   }
 
 
 
-
-
-
-
-
-
   return (
-
     <main
-
       className="
         min-h-screen
         flex
@@ -255,13 +121,9 @@ export default function SignInPage(){
         px-6
         text-white
       "
-
     >
 
-
-
       <div
-
         className="
           w-full
           max-w-md
@@ -273,167 +135,90 @@ export default function SignInPage(){
           p-8
           shadow-xl
         "
-
       >
 
-
-
-
-
         <Link
-
           href="/"
-
           className="
             flex
             items-center
             gap-2
+            mb-8
             text-sm
             text-white/60
             hover:text-white
-            mb-8
           "
-
         >
-
           <ArrowLeft size={16}/>
-
           Back
-
         </Link>
 
 
-
-
-
-
-
-
         <h1
-
           className="
             text-3xl
             font-bold
           "
-
         >
-
           Welcome Back
-
         </h1>
 
 
-
-
-
         <p
-
           className="
             mt-2
             mb-8
             text-white/60
           "
-
         >
-
           Sign in to your EngineeringOS workspace.
-
         </p>
 
 
 
-
-
-
-
-
-
-        {
-          error && (
-
-            <div
-
-              className="
-                mb-5
-                rounded-lg
-                border
-                border-red-500/30
-                bg-red-500/10
-                px-4
-                py-3
-                text-sm
-                text-red-300
-              "
-
-            >
-
-              {error}
-
-            </div>
-
-          )
-        }
-
-
-
-
-
-
+        {error && (
+          <div
+            className="
+              mb-5
+              rounded-lg
+              border
+              border-red-500/30
+              bg-red-500/10
+              px-4
+              py-3
+              text-sm
+              text-red-300
+            "
+          >
+            {error}
+          </div>
+        )}
 
 
 
         <form
-
           onSubmit={handleSubmit}
-
-          className="
-            space-y-5
-          "
-
+          className="space-y-5"
         >
-
-
-
-
-
-
 
           <div>
 
-
             <label
-
               className="
                 block
                 mb-2
                 text-sm
                 text-white/70
               "
-
             >
-
               Email
-
             </label>
 
 
-
-
-
-            <div
-
-              className="
-                relative
-              "
-
-            >
-
-
+            <div className="relative">
 
               <Mail
-
                 size={18}
-
                 className="
                   absolute
                   left-3
@@ -441,35 +226,18 @@ export default function SignInPage(){
                   -translate-y-1/2
                   text-[#00D2FF]
                 "
-
               />
 
 
-
-
-
               <input
-
-
                 type="email"
-
-
                 value={email}
-
-
-                onChange={
-                  (e)=>
+                onChange={(e)=>
                   setEmail(e.target.value)
                 }
-
-
                 required
-
-
+                autoComplete="email"
                 placeholder="you@example.com"
-
-
-
                 className="
                   w-full
                   rounded-xl
@@ -482,99 +250,56 @@ export default function SignInPage(){
                   outline-none
                   focus:border-[#00D2FF]
                 "
-
-
               />
 
-
-
             </div>
-
 
           </div>
 
 
 
 
-
-
-
-
-
           <div>
 
-
             <div
-
               className="
                 flex
                 items-center
                 justify-between
                 mb-2
               "
-
             >
 
-
               <label
-
                 className="
                   text-sm
                   text-white/70
                 "
-
               >
-
                 Password
-
               </label>
 
 
-
-
-
               <Link
-
                 href="/forgot-password"
-
                 className="
                   text-xs
                   text-[#00D2FF]
                   hover:underline
                 "
-
               >
-
                 Forgot password?
-
               </Link>
-
-
 
             </div>
 
 
 
-
-
-
-
-            <div
-
-              className="
-                relative
-              "
-
-            >
-
-
-
+            <div className="relative">
 
 
               <Lock
-
                 size={18}
-
                 className="
                   absolute
                   left-3
@@ -582,48 +307,23 @@ export default function SignInPage(){
                   -translate-y-1/2
                   text-[#FF6B00]
                 "
-
               />
 
 
 
-
-
-
-
               <input
-
-
                 type={
                   showPassword
-                  ?
-                  "text"
-                  :
-                  "password"
+                  ? "text"
+                  : "password"
                 }
-
-
-
                 value={password}
-
-
-
-                onChange={
-                  (e)=>
+                onChange={(e)=>
                   setPassword(e.target.value)
                 }
-
-
-
                 required
-
-
-
+                autoComplete="current-password"
                 placeholder="Enter your password"
-
-
-
-
                 className="
                   w-full
                   rounded-xl
@@ -636,30 +336,15 @@ export default function SignInPage(){
                   outline-none
                   focus:border-[#FF6B00]
                 "
-
-
-
               />
 
 
 
-
-
-
-
-
-
               <button
-
                 type="button"
-
-                onClick={
-                  ()=>setShowPassword(
-                    !showPassword
-                  )
+                onClick={()=>
+                  setShowPassword(!showPassword)
                 }
-
-
                 className="
                   absolute
                   right-3
@@ -667,24 +352,15 @@ export default function SignInPage(){
                   -translate-y-1/2
                   text-white/60
                 "
-
               >
-
-
 
                 {
                   showPassword
-                  ?
-                  <EyeOff size={18}/>
-                  :
-                  <Eye size={18}/>
+                  ? <EyeOff size={18}/>
+                  : <Eye size={18}/>
                 }
 
-
-
               </button>
-
-
 
 
             </div>
@@ -695,21 +371,9 @@ export default function SignInPage(){
 
 
 
-
-
-
-
-
           <button
-
-
             type="submit"
-
-
             disabled={loading}
-
-
-
             className="
               w-full
               rounded-xl
@@ -721,27 +385,15 @@ export default function SignInPage(){
               text-black
               disabled:opacity-50
             "
-
-
           >
-
-
 
             {
               loading
-              ?
-              "Signing in..."
-              :
-              "Sign In"
+              ? "Signing in..."
+              : "Sign In"
             }
 
-
-
-
           </button>
-
-
-
 
 
         </form>
@@ -749,55 +401,32 @@ export default function SignInPage(){
 
 
 
-
-
-
-
-
         <p
-
           className="
             mt-6
             text-center
             text-sm
             text-white/60
           "
-
         >
-
           Don't have an account?
 
-
           <Link
-
             href="/register"
-
             className="
               ml-2
               text-[#00D2FF]
               hover:underline
             "
-
           >
-
             Create one
-
           </Link>
-
 
         </p>
 
 
-
-
-
       </div>
 
-
-
     </main>
-
   );
-
-
 }

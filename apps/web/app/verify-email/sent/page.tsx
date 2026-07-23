@@ -1,6 +1,5 @@
 "use client";
 
-
 import {
   useSearchParams,
 } from "next/navigation";
@@ -10,13 +9,16 @@ import Link from "next/link";
 import {
   Mail,
   ArrowLeft,
+  RefreshCw,
 } from "lucide-react";
 
+import { useState } from "react";
+
+import { authService } from "@/services/auth.service";
 
 
 
-export default function VerifyEmailSentPage(){
-
+export default function VerifyEmailSentPage() {
 
   const searchParams =
     useSearchParams();
@@ -26,13 +28,58 @@ export default function VerifyEmailSentPage(){
     searchParams.get("email");
 
 
+  const [resending,setResending] =
+    useState(false);
+
+
+  const [message,setMessage] =
+    useState("");
+
+
+
+  async function resendEmail(){
+
+    if(!email) return;
+
+
+    setResending(true);
+
+    setMessage("");
+
+
+    try{
+
+      await authService.resendVerification({
+        email,
+      });
+
+
+      setMessage(
+        "Verification email sent successfully."
+      );
+
+
+    }
+    catch(error){
+
+      setMessage(
+        "Unable to resend verification email."
+      );
+
+    }
+    finally{
+
+      setResending(false);
+
+    }
+
+  }
 
 
 
   return (
 
     <main
-
       className="
         min-h-screen
         flex
@@ -42,13 +89,10 @@ export default function VerifyEmailSentPage(){
         px-6
         text-white
       "
-
     >
 
 
-
       <div
-
         className="
           w-full
           max-w-md
@@ -60,115 +104,77 @@ export default function VerifyEmailSentPage(){
           p-10
           text-center
         "
-
       >
 
 
 
-
-
         <div
-
           className="
             flex
             justify-center
             mb-6
           "
-
         >
 
-
           <div
-
             className="
               rounded-full
               bg-[#00D2FF]/10
               p-5
             "
-
           >
 
-
             <Mail
-
               size={40}
-
-              className="
-                text-[#00D2FF]
-              "
-
+              className="text-[#00D2FF]"
             />
 
-
           </div>
-
 
         </div>
 
 
 
 
-
-
-
         <h1
-
           className="
             text-3xl
             font-bold
           "
-
         >
-
           Check your email
-
         </h1>
 
 
 
 
-
-
-
         <p
-
           className="
             mt-4
             text-white/70
             leading-relaxed
           "
-
         >
-
           We have sent a verification link to:
-
         </p>
 
 
 
 
+        {email && (
 
-        {
-          email && (
+          <p
+            className="
+              mt-3
+              font-semibold
+              text-[#00D2FF]
+              break-all
+            "
+          >
+            {email}
+          </p>
 
-            <p
-
-              className="
-                mt-3
-                font-semibold
-                text-[#00D2FF]
-                break-all
-              "
-
-            >
-
-              {email}
-
-            </p>
-
-          )
-        }
-
+        )}
 
 
 
@@ -176,20 +182,72 @@ export default function VerifyEmailSentPage(){
 
 
         <p
-
           className="
             mt-5
             text-sm
             text-white/60
           "
-
         >
-
           Open the email and click the verification link
           to activate your EngineeringOS account.
-
         </p>
 
+
+
+
+
+
+        {message && (
+
+          <p
+            className="
+              mt-5
+              text-sm
+              text-[#00D2FF]
+            "
+          >
+            {message}
+          </p>
+
+        )}
+
+
+
+
+
+
+        <button
+          onClick={resendEmail}
+          disabled={resending}
+          className="
+            mt-8
+            inline-flex
+            items-center
+            justify-center
+            gap-2
+            w-full
+            rounded-xl
+            border
+            border-white/10
+            bg-white/10
+            py-3
+            font-semibold
+            hover:bg-white/20
+            disabled:opacity-50
+          "
+        >
+
+          <RefreshCw size={18}/>
+
+          {
+            resending
+            ?
+            "Sending..."
+            :
+            "Resend verification email"
+          }
+
+        </button>
 
 
 
@@ -197,11 +255,9 @@ export default function VerifyEmailSentPage(){
 
 
         <Link
-
           href="/verify-email"
-
           className="
-            mt-8
+            mt-4
             inline-flex
             items-center
             justify-center
@@ -215,14 +271,11 @@ export default function VerifyEmailSentPage(){
             font-semibold
             text-black
           "
-
         >
-
 
           <ArrowLeft size={18}/>
 
           Verify another email
-
 
         </Link>
 
@@ -231,39 +284,28 @@ export default function VerifyEmailSentPage(){
 
 
 
-
         <p
-
           className="
             mt-6
             text-sm
             text-white/50
           "
-
         >
 
           Already verified?
 
           <Link
-
             href="/signin"
-
             className="
               ml-2
               text-[#00D2FF]
               hover:underline
             "
-
           >
-
             Sign in
-
           </Link>
 
-
         </p>
-
-
 
 
 
@@ -272,8 +314,6 @@ export default function VerifyEmailSentPage(){
 
     </main>
 
-
   );
-
 
 }

@@ -10,27 +10,44 @@ import {
   useAuthStore,
 } from "@/stores/auth.store";
 
+import type {
+  User,
+} from "@/stores/auth.store";
+
 
 
 interface AuthContextType {
 
-  user: ReturnType<typeof useAuthStore>["user"];
+  user: User | null;
 
-  accessToken: ReturnType<typeof useAuthStore>["accessToken"];
+  accessToken: string | null;
 
-  refreshToken: ReturnType<typeof useAuthStore>["refreshToken"];
+  refreshToken: string | null;
 
   hydrated: boolean;
 
   loading: boolean;
 
-  login: ReturnType<typeof useAuthStore>["login"];
+  login: (
+    user: User,
+    accessToken: string,
+    refreshToken: string
+  ) => void;
 
-  logout: ReturnType<typeof useAuthStore>["logout"];
+  logout: () => Promise<void>;
 
-  setUser: ReturnType<typeof useAuthStore>["setUser"];
+  setUser: (
+    user: User | null
+  ) => void;
 
-  isAuthenticated: ReturnType<typeof useAuthStore>["isAuthenticated"];
+  setTokens: (
+    accessToken: string,
+    refreshToken: string
+  ) => void;
+
+  clearAuth: () => void;
+
+  isAuthenticated: () => boolean;
 
 }
 
@@ -54,97 +71,86 @@ export function AuthProvider({
 }) {
 
 
-
-  const user =
-    useAuthStore(
-      (state) => state.user
-    );
-
-
-  const accessToken =
-    useAuthStore(
-      (state) => state.accessToken
-    );
-
-
-  const refreshToken =
-    useAuthStore(
-      (state) => state.refreshToken
-    );
-
-
-  const hydrated =
-    useAuthStore(
-      (state) => state.hydrated
-    );
-
-
-  const loading =
-    useAuthStore(
-      (state) => state.loading
-    );
-
-
-  const login =
-    useAuthStore(
-      (state) => state.login
-    );
-
-
-  const logout =
-    useAuthStore(
-      (state) => state.logout
-    );
-
-
-  const setUser =
-    useAuthStore(
-      (state) => state.setUser
-    );
-
-
-  const isAuthenticated =
-    useAuthStore(
-      (state) => state.isAuthenticated
-    );
-
+  const authState =
+    useAuthStore();
 
 
 
   const authValue =
-    useMemo(
+    useMemo<AuthContextType>(
+
       () => ({
 
-        user,
+        user:
+          authState.user,
 
-        accessToken,
 
-        refreshToken,
+        accessToken:
+          authState.accessToken,
 
-        hydrated,
 
-        loading,
+        refreshToken:
+          authState.refreshToken,
 
-        login,
 
-        logout,
+        hydrated:
+          authState.hydrated,
 
-        setUser,
 
-        isAuthenticated,
+        loading:
+          authState.loading,
+
+
+        login:
+          authState.login,
+
+
+        logout:
+          authState.logout,
+
+
+        setUser:
+          authState.setUser,
+
+
+        setTokens:
+          authState.setTokens,
+
+
+        clearAuth:
+          authState.clearAuth,
+
+
+        isAuthenticated:
+          authState.isAuthenticated,
+
 
       }),
 
       [
-        user,
-        accessToken,
-        refreshToken,
-        hydrated,
-        loading,
-        login,
-        logout,
-        setUser,
-        isAuthenticated,
+
+        authState.user,
+
+        authState.accessToken,
+
+        authState.refreshToken,
+
+        authState.hydrated,
+
+        authState.loading,
+
+        authState.login,
+
+        authState.logout,
+
+        authState.setUser,
+
+        authState.setTokens,
+
+        authState.clearAuth,
+
+        authState.isAuthenticated,
+
       ]
 
     );
@@ -166,7 +172,6 @@ export function AuthProvider({
   );
 
 }
-
 
 
 

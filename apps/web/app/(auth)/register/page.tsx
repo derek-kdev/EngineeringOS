@@ -1,18 +1,10 @@
 "use client";
 
-
-import {
-  useState,
-} from "react";
-
+import { useState } from "react";
 
 import Link from "next/link";
 
-
-import {
-  useRouter,
-} from "next/navigation";
-
+import { useRouter } from "next/navigation";
 
 import {
   ArrowLeft,
@@ -23,76 +15,38 @@ import {
   User,
 } from "lucide-react";
 
+import { authService } from "@/services/auth.service";
 
-import {
-  authService,
-} from "@/services/auth.service";
+export default function RegisterPage() {
 
-
-
-
-export default function RegisterPage(){
+  const router = useRouter();
 
 
-  const router =
-    useRouter();
+  const [form, setForm] = useState({
 
-
-
-  const [
-    form,
-    setForm
-  ] =
-  useState({
-
-    firstName:"",
-
-    lastName:"",
-
-    email:"",
-
-    password:"",
-
-    confirmPassword:"",
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
 
   });
 
 
+  const [showPassword,setShowPassword] =
+    useState(false);
 
 
-  const [
-    showPassword,
-    setShowPassword
-  ] =
-  useState(false);
+  const [showConfirmPassword,setShowConfirmPassword] =
+    useState(false);
 
 
-
-  const [
-    showConfirmPassword,
-    setShowConfirmPassword
-  ] =
-  useState(false);
+  const [loading,setLoading] =
+    useState(false);
 
 
-
-  const [
-    loading,
-    setLoading
-  ] =
-  useState(false);
-
-
-
-  const [
-    error,
-    setError
-  ] =
-  useState("");
-
-
-
-
+  const [error,setError] =
+    useState("");
 
 
 
@@ -100,24 +54,15 @@ export default function RegisterPage(){
     e:React.ChangeEvent<HTMLInputElement>
   ){
 
+    setForm((previous)=>({
 
-    setForm({
+      ...previous,
 
-      ...form,
+      [e.target.name]: e.target.value,
 
-      [e.target.name]:
-        e.target.value,
-
-    });
-
+    }));
 
   }
-
-
-
-
-
-
 
 
 
@@ -125,30 +70,29 @@ export default function RegisterPage(){
     e:React.FormEvent<HTMLFormElement>
   ){
 
-
     e.preventDefault();
-
 
     setError("");
 
 
+    if(form.password !== form.confirmPassword){
 
-
-    if(
-      form.password !== form.confirmPassword
-    ){
-
-      setError(
-        "Passwords do not match"
-      );
+      setError("Passwords do not match");
 
       return;
 
     }
 
 
+    if(form.password.length < 6){
 
+      setError(
+        "Password must be at least 6 characters"
+      );
 
+      return;
+
+    }
 
 
     setLoading(true);
@@ -161,29 +105,20 @@ export default function RegisterPage(){
       await authService.register({
 
         firstName:
-          form.firstName,
-
+          form.firstName.trim(),
 
         lastName:
-          form.lastName,
-
+          form.lastName.trim(),
 
         email:
-          form.email,
-
+          form.email.trim().toLowerCase(),
 
         password:
           form.password,
 
-
         sendVerificationEmail:true,
 
-
       });
-
-
-
-
 
 
 
@@ -194,8 +129,6 @@ export default function RegisterPage(){
 
 
     }
-
-
     catch(error:any){
 
 
@@ -203,7 +136,6 @@ export default function RegisterPage(){
         "Registration error:",
         error
       );
-
 
 
       setError(
@@ -216,25 +148,13 @@ export default function RegisterPage(){
 
 
     }
-
-
-
     finally{
-
 
       setLoading(false);
 
-
     }
 
-
-
   }
-
-
-
-
-
 
 
 
@@ -242,50 +162,42 @@ export default function RegisterPage(){
   return (
 
     <main
-
       className="
-      min-h-screen
-      flex
-      items-center
-      justify-center
-      bg-[#0B132B]
-      px-6
-      py-10
-      text-white
+        min-h-screen
+        flex
+        items-center
+        justify-center
+        bg-[#0B132B]
+        px-6
+        py-10
+        text-white
       "
-
     >
 
 
       <div
-
         className="
-        w-full
-        max-w-lg
-        rounded-2xl
-        border
-        border-white/10
-        bg-white/5
-        backdrop-blur-2xl
-        p-8
+          w-full
+          max-w-lg
+          rounded-2xl
+          border
+          border-white/10
+          bg-white/5
+          backdrop-blur-2xl
+          p-8
         "
-
       >
 
 
-
         <Link
-
           href="/"
-
           className="
-          flex
-          gap-2
-          items-center
-          text-white/60
-          mb-8
+            flex
+            items-center
+            gap-2
+            text-white/60
+            mb-8
           "
-
         >
 
           <ArrowLeft size={16}/>
@@ -293,7 +205,6 @@ export default function RegisterPage(){
           Back
 
         </Link>
-
 
 
 
@@ -315,40 +226,30 @@ export default function RegisterPage(){
 
 
 
-
-
-        {
-          error &&
+        {error && (
 
           <div
-
             className="
-            mb-5
-            rounded-xl
-            bg-red-500/10
-            border
-            border-red-500/30
-            px-4
-            py-3
-            text-red-300
+              mb-5
+              rounded-xl
+              bg-red-500/10
+              border
+              border-red-500/30
+              px-4
+              py-3
+              text-red-300
             "
-
           >
 
             {
               Array.isArray(error)
-              ?
-              error.join(", ")
-              :
-              error
+              ? error.join(", ")
+              : error
             }
 
           </div>
 
-        }
-
-
-
+        )}
 
 
 
@@ -356,14 +257,9 @@ export default function RegisterPage(){
 
 
         <form
-
           onSubmit={handleSubmit}
-
           className="space-y-5"
-
         >
-
-
 
 
           <div className="grid sm:grid-cols-2 gap-4">
@@ -384,7 +280,6 @@ export default function RegisterPage(){
             />
 
 
-
             <InputField
 
               icon={<User size={18}/>}
@@ -401,7 +296,6 @@ export default function RegisterPage(){
 
 
           </div>
-
 
 
 
@@ -427,7 +321,6 @@ export default function RegisterPage(){
 
 
 
-
           <PasswordField
 
             name="password"
@@ -443,8 +336,6 @@ export default function RegisterPage(){
             onChange={handleChange}
 
           />
-
-
 
 
 
@@ -470,21 +361,22 @@ export default function RegisterPage(){
 
 
 
-
-
           <button
+
+            type="submit"
 
             disabled={loading}
 
             className="
-            w-full
-            rounded-xl
-            bg-gradient-to-r
-            from-[#00D2FF]
-            to-[#FF6B00]
-            py-3
-            font-semibold
-            text-black
+              w-full
+              rounded-xl
+              bg-gradient-to-r
+              from-[#00D2FF]
+              to-[#FF6B00]
+              py-3
+              font-semibold
+              text-black
+              disabled:opacity-50
             "
 
           >
@@ -501,10 +393,7 @@ export default function RegisterPage(){
           </button>
 
 
-
-
         </form>
-
 
 
 
@@ -512,16 +401,12 @@ export default function RegisterPage(){
 
         <p className="mt-6 text-center text-white/60">
 
-
           Already have an account?
 
 
           <Link
-
             href="/signin"
-
             className="ml-2 text-[#00D2FF]"
-
           >
 
             Sign in
@@ -530,7 +415,6 @@ export default function RegisterPage(){
 
 
         </p>
-
 
 
       </div>
@@ -548,7 +432,6 @@ export default function RegisterPage(){
 
 
 
-
 function InputField({
   icon,
   name,
@@ -558,52 +441,60 @@ function InputField({
   type="text",
 }:any){
 
+  return (
 
-return (
-
-<div className="relative">
-
-
-<div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00D2FF]">
-
-{icon}
-
-</div>
+    <div className="relative">
 
 
+      <div
+        className="
+          absolute
+          left-3
+          top-1/2
+          -translate-y-1/2
+          text-[#00D2FF]
+        "
+      >
 
-<input
+        {icon}
 
-type={type}
-
-name={name}
-
-placeholder={placeholder}
-
-value={value}
-
-onChange={onChange}
-
-required
-
-className="
-w-full
-rounded-xl
-border
-border-white/10
-bg-black/20
-py-3
-pl-10
-pr-4
-"
-
-/>
+      </div>
 
 
-</div>
 
-);
+      <input
 
+        type={type}
+
+        name={name}
+
+        placeholder={placeholder}
+
+        value={value}
+
+        onChange={onChange}
+
+        required
+
+        className="
+          w-full
+          rounded-xl
+          border
+          border-white/10
+          bg-black/20
+          py-3
+          pl-10
+          pr-4
+          outline-none
+          focus:border-[#00D2FF]
+        "
+
+      />
+
+
+    </div>
+
+  );
 
 }
 
@@ -615,86 +506,101 @@ pr-4
 
 
 function PasswordField({
-name,
-placeholder,
-value,
-visible,
-setVisible,
-onChange,
+  name,
+  placeholder,
+  value,
+  visible,
+  setVisible,
+  onChange,
 }:any){
 
 
-return (
+  return (
 
-<div className="relative">
-
-
-<Lock
-
-size={18}
-
-className="absolute left-3 top-1/2 -translate-y-1/2 text-[#FF6B00]"
-
-/>
+    <div className="relative">
 
 
+      <Lock
 
+        size={18}
 
-<input
+        className="
+          absolute
+          left-3
+          top-1/2
+          -translate-y-1/2
+          text-[#FF6B00]
+        "
 
-type={visible ? "text":"password"}
-
-name={name}
-
-placeholder={placeholder}
-
-value={value}
-
-onChange={onChange}
-
-required
-
-className="
-w-full
-rounded-xl
-border
-border-white/10
-bg-black/20
-py-3
-pl-10
-pr-12
-"
-
-/>
+      />
 
 
 
+      <input
 
-<button
+        type={
+          visible
+          ? "text"
+          : "password"
+        }
 
-type="button"
+        name={name}
 
-onClick={()=>setVisible(!visible)}
+        placeholder={placeholder}
 
-className="absolute right-3 top-1/2 -translate-y-1/2"
+        value={value}
 
->
+        onChange={onChange}
 
-{
-visible
-?
-<EyeOff size={18}/>
-:
-<Eye size={18}/>
-}
+        required
 
-</button>
+        className="
+          w-full
+          rounded-xl
+          border
+          border-white/10
+          bg-black/20
+          py-3
+          pl-10
+          pr-12
+          outline-none
+        "
+
+      />
 
 
 
-</div>
+      <button
 
-);
+        type="button"
 
+        onClick={()=>
+          setVisible(!visible)
+        }
+
+        className="
+          absolute
+          right-3
+          top-1/2
+          -translate-y-1/2
+        "
+
+      >
+
+        {
+          visible
+          ?
+          <EyeOff size={18}/>
+          :
+          <Eye size={18}/>
+        }
+
+
+      </button>
+
+
+    </div>
+
+  );
 
 }
