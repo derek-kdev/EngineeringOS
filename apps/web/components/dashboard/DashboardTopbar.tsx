@@ -8,25 +8,52 @@ import {
 
 import {
   Bell,
-  ChevronDown,
   Search,
+  ChevronDown,
 } from "lucide-react";
 
-import {
-  motion,
-} from "framer-motion";
+import Image from "next/image";
+import Link from "next/link";
 
+import {
+  NAV_GROUPS,
+} from "@/constants/dashboard/navigation";
+
+import {
+  isAdminRole,
+} from "@/constants/dashboard/roles";
 
 import {
   useAuth,
 } from "@/hooks/useAuth";
 
-
 import UserPanel from "@/components/dashboard/panels/UserPanel";
+
+import NotificationPanel from "@/components/dashboard/panels/NotificationPanel";
 
 import CommandPalette from "@/components/dashboard/CommandPalette";
 
-import NotificationPanel from "@/components/dashboard/panels/NotificationPanel";
+
+
+interface NavItem {
+
+  name:string;
+
+  href:string;
+
+  icon:React.ReactNode;
+
+}
+
+
+
+interface NavGroup {
+
+  name:string;
+
+  items:NavItem[];
+
+}
 
 
 
@@ -34,7 +61,15 @@ import NotificationPanel from "@/components/dashboard/panels/NotificationPanel";
 
 interface DashboardTopbarProps {
 
-  expanded:boolean;
+  onOpenPanel?: (
+
+    panel:
+      | "profile"
+      | "preferences"
+      | "security"
+      | "workspace"
+
+  ) => void;
 
 }
 
@@ -43,8 +78,10 @@ interface DashboardTopbarProps {
 
 
 export default function DashboardTopbar({
-  expanded,
-}:DashboardTopbarProps){
+
+  onOpenPanel,
+
+}: DashboardTopbarProps) {
 
 
 
@@ -55,106 +92,148 @@ export default function DashboardTopbar({
 
 
 
-  const [
-    showPanel,
-    setShowPanel,
-  ] =
-  useState(false);
-
-
-
 
   const [
-    showCommandPalette,
-    setShowCommandPalette,
-  ] =
-  useState(false);
+    showUser,
+    setShowUser
+  ] = useState(false);
+
 
 
 
 
   const [
     showNotifications,
-    setShowNotifications,
-  ] =
-  useState(false);
+    setShowNotifications
+  ] = useState(false);
+
 
 
 
 
   const [
-    visible,
-    setVisible,
-  ] =
-  useState(true);
-
-
-
-
-  const lastScroll =
-  useRef(0);
-
-
-
-  const ticking =
-  useRef(false);
+    showCommand,
+    setShowCommand
+  ] = useState(false);
 
 
 
 
 
+  const [
+    openMenu,
+    setOpenMenu
+  ] = useState<string | null>(null);
 
 
 
-  /*
-  |--------------------------------------------------------------------------
-  | Global Command Shortcut
-  |--------------------------------------------------------------------------
-  */
+
+
+  const closeTimer =
+    useRef<NodeJS.Timeout | null>(null);
+
+
+
+
+
+
+
+  function handleOpenMenu(
+    name:string
+  ){
+
+    if(closeTimer.current){
+
+      clearTimeout(closeTimer.current);
+
+    }
+
+
+    setOpenMenu(name);
+
+  }
+
+
+
+
+
+
+
+  function handleCloseMenu(){
+
+    closeTimer.current =
+      setTimeout(()=>{
+
+        setOpenMenu(null);
+
+      },450);
+
+  }
+
+
+
+
+
+
+
+  function cancelClose(){
+
+    if(closeTimer.current){
+
+      clearTimeout(closeTimer.current);
+
+    }
+
+  }
+
+
+
+
+
+
+
 
 
   useEffect(()=>{
 
 
-    function handleShortcut(
+    function shortcut(
       event:KeyboardEvent
     ){
 
-
       if(
-        (event.ctrlKey || event.metaKey)
+
+        (event.metaKey || event.ctrlKey)
+
         &&
+
         event.key.toLowerCase()==="k"
+
       ){
 
         event.preventDefault();
 
-        setShowCommandPalette(true);
+        setShowCommand(true);
 
       }
 
-
     }
-
-
 
 
 
     window.addEventListener(
       "keydown",
-      handleShortcut
+      shortcut
     );
 
 
 
     return()=>{
-
 
       window.removeEventListener(
         "keydown",
-        handleShortcut
+        shortcut
       );
-
 
     };
 
@@ -169,116 +248,41 @@ export default function DashboardTopbar({
 
 
 
+  const filteredGroups =
+    NAV_GROUPS
+      .map((group):NavGroup | null => {
 
-  /*
-  |--------------------------------------------------------------------------
-  | Hide Topbar On Scroll
-  |--------------------------------------------------------------------------
-  */
+        if(group.name !== "Administration"){
 
-
-  useEffect(()=>{
-
-
-    lastScroll.current =
-      window.scrollY;
-
-
-
-
-    function handleScroll(){
-
-
-
-      if(ticking.current)
-        return;
-
-
-
-
-      ticking.current=true;
-
-
-
-      requestAnimationFrame(()=>{
-
-
-
-        const current =
-          window.scrollY;
-
-
-
-
-        if(
-          current > lastScroll.current &&
-          current > 80
-        ){
-
-
-          setVisible(false);
-
-          setShowPanel(false);
-
-          setShowNotifications(false);
-
-
-        }
-        else{
-
-
-          setVisible(true);
-
+          return group as NavGroup;
 
         }
 
 
 
-
-        lastScroll.current =
-          current;
-
-
-
-        ticking.current=false;
+        const allowed =
+          isAdminRole(
+            user?.role
+          );
 
 
 
-      });
+        if(allowed){
+
+          return group as NavGroup;
+
+        }
 
 
 
-    }
+        return null;
 
 
-
-
-
-    window.addEventListener(
-      "scroll",
-      handleScroll,
-      {
-        passive:true,
-      }
-    );
-
-
-
-
-    return()=>{
-
-
-      window.removeEventListener(
-        "scroll",
-        handleScroll
+      })
+      .filter(
+        (group): group is NavGroup =>
+          group !== null
       );
-
-
-    };
-
-
-
-  },[]);
 
 
 
@@ -293,441 +297,456 @@ export default function DashboardTopbar({
     <>
 
 
-      <motion.header
+<header
 
+className="
+fixed
+top-0
+left-0
+right-0
+z-50
+h-9
+border-b
+border-white/10
+bg-[#0B132B]/90
+backdrop-blur-xl
+flex
+items-center
+justify-between
+px-3
+text-white
+"
 
-        animate={{
-          y:visible ? 0 : -100,
-          opacity:visible ? 1 : 0,
-        }}
+>
 
+<div
 
-        transition={{
-          duration:0.3,
-        }}
+className="
+flex
+items-center
+gap-2
+text-xs
+font-semibold
+"
 
+>
 
 
-        className={`
-          fixed
-          top-4
-          right-4
-          z-40
-          rounded-2xl
-          border
-          border-white/10
-          bg-[#0B132B]/60
-          backdrop-blur-2xl
-          px-5
-          py-3
-          text-white
+<div
 
-          ${
-            expanded
-            ?
-            "left-[286px]"
-            :
-            "left-[94px]"
-          }
+className="
+h-5
+w-5
+rounded
+overflow-hidden
+flex
+items-center
+justify-center
+"
 
-        `}
+>
 
 
-      >
+<Image
 
+src="/img/our_logo.jpg"
 
+alt="EngineeringOS Logo"
 
-        <div
-          className="
-            flex
-            items-center
-            justify-between
-            gap-6
-          "
-        >
+width={20}
 
+height={20}
 
+className="
+h-full
+w-full
+object-cover
+"
 
+/>
 
 
+</div>
 
 
-          {/* GREETING */}
 
+EngineeringOS
 
-          <div
-            className="
-              flex-1
-              hidden
-              lg:block
-            "
-          >
 
+</div>
 
-            <p
-              className="
-                text-sm
-                text-white/50
-              "
-            >
 
-              Welcome back,
 
-            </p>
 
 
 
-            <h2
-              className="
-                text-sm
-                font-semibold
-              "
-            >
 
-              {user?.firstName || "Engineer"}
+<nav
 
-              <span className="text-[#FF6B00]">
-                👋
-              </span>
+className="
+flex
+items-center
+gap-5
+text-xs
+"
 
+>
 
-            </h2>
 
+{
 
-          </div>
+filteredGroups.map((group:NavGroup)=>(
 
 
+<div
 
+key={group.name}
 
+className="
+relative
+"
 
+onMouseEnter={()=>handleOpenMenu(group.name)}
 
+onMouseLeave={handleCloseMenu}
 
+>
 
 
-          {/* COMMAND SEARCH */}
+<button
 
+className="
+px-4
+py-1.5
+rounded-md
+text-white/70
+hover:bg-white/10
+hover:text-white
+transition
+"
 
+>
 
-          <div
-            className="
-              flex-[1.5]
-            "
-          >
+{group.name}
 
+</button>
 
-            <button
 
-              onClick={() =>
-                setShowCommandPalette(true)
-              }
 
 
-              className="
-                relative
-                w-full
-                text-left
-              "
 
-            >
+{
 
+openMenu === group.name && (
 
 
-              <Search
+<div
 
-                size={17}
+onMouseEnter={cancelClose}
 
-                className="
-                  absolute
-                  left-3
-                  top-1/2
-                  -translate-y-1/2
-                  text-[#00D2FF]
-                "
+onMouseLeave={handleCloseMenu}
 
-              />
+className="
+absolute
+top-full
+left-0
+mt-2
+min-w-56
+rounded-xl
+border
+border-white/10
+bg-[#111827]
+shadow-2xl
+p-2
+"
 
+>
 
 
+{
 
-              <div
+group.items.map((item:NavItem)=>(
 
-                className="
-                  w-full
-                  rounded-xl
-                  bg-white/[0.03]
-                  pl-10
-                  pr-16
-                  py-2.5
-                  text-sm
-                  text-white/40
-                "
 
-              >
+<Link
 
-                Search projects, papers, prototypes...
+key={item.href}
 
-              </div>
+href={item.href}
 
+className="
+flex
+items-center
+gap-3
+rounded-lg
+px-4
+py-3
+text-xs
+text-white/70
+hover:bg-white/10
+hover:text-white
+"
 
+>
 
 
+{item.icon}
 
-              <span
 
-                className="
-                  absolute
-                  right-3
-                  top-1/2
-                  -translate-y-1/2
-                  rounded-md
-                  bg-white/5
-                  px-2
-                  py-1
-                  text-[10px]
-                  text-white/40
-                "
+<span>
 
-              >
+{item.name}
 
-                Ctrl K
+</span>
 
-              </span>
 
+</Link>
 
 
+))
 
-            </button>
+}
 
 
-          </div>
 
+</div>
 
 
+)
 
 
+}
 
 
 
+</div>
 
-          {/* ACTIONS */}
 
+))
 
 
-          <div
+}
 
-            className="
-              flex
-              flex-1
-              justify-end
-              items-center
-              gap-5
-            "
 
-          >
+</nav>
 
 
 
 
 
-            {/* NOTIFICATIONS */}
 
 
+<div
 
-            <button
+className="
+flex
+items-center
+gap-3
+"
 
-              onClick={() =>
-                setShowNotifications(
-                  previous=>!previous
-                )
-              }
+>
 
 
-              className="
-                relative
-                text-white/60
-                hover:text-[#00D2FF]
-              "
+<button
 
-            >
+onClick={()=>setShowCommand(true)}
 
-              <Bell size={20}/>
+className="
+flex
+items-center
+gap-2
+rounded
+border
+border-white/10
+px-2
+py-1
+text-xs
+text-white/50
+"
 
+>
 
+<Search size={12}/>
 
-              {/* Temporary unread count */}
+Search
 
-              <span
+</button>
 
-                className="
-                  absolute
-                  -right-2
-                  -top-2
-                  flex
-                  h-4
-                  w-4
-                  items-center
-                  justify-center
-                  rounded-full
-                  bg-[#FF6B00]
-                  text-[10px]
-                  text-black
-                "
 
-              >
 
-                0
 
-              </span>
 
 
 
-            </button>
+<button
 
+onClick={()=>setShowNotifications(!showNotifications)}
 
+>
 
+<Bell size={15}/>
 
+</button>
 
 
 
 
 
-            {/* USER MENU */}
 
 
+<button
 
-            <button
+onClick={()=>setShowUser(!showUser)}
 
-              onClick={() =>
-                setShowPanel(
-                  previous=>!previous
-                )
-              }
+className="
+flex
+items-center
+gap-1
+"
 
+>
 
-              className="
-                flex
-                items-center
-                gap-2
-              "
 
-            >
+<div
 
+className="
+h-5
+w-5
+rounded-full
+overflow-hidden
+flex
+items-center
+justify-center
+bg-gradient-to-br
+from-[#00D2FF]
+to-[#FF6B00]
+text-black
+text-[10px]
+font-bold
+"
 
+>
 
-              <div
 
-                className="
-                  h-9
-                  w-9
-                  rounded-full
-                  bg-gradient-to-br
-                  from-[#FF6B00]
-                  to-[#FFB300]
-                  flex
-                  items-center
-                  justify-center
-                  font-bold
-                  text-black
-                "
+{
 
-              >
+user?.avatarUrl ? (
 
-                {
-                  user?.firstName
-                  ?.charAt(0)
-                  ||
-                  "E"
-                }
+<Image
 
+src={user.avatarUrl}
 
-              </div>
+alt="User avatar"
 
+width={20}
 
+height={20}
 
+className="
+h-full
+w-full
+object-cover
+"
 
+/>
 
-              <ChevronDown
+)
 
-                size={16}
+:
 
-                className="
-                  text-white/70
-                "
+(
 
-              />
+user?.firstName?.charAt(0)
 
+||
 
-            </button>
+"E"
 
+)
 
+}
 
-          </div>
 
+</div>
 
 
-        </div>
 
 
 
-      </motion.header>
+<ChevronDown size={12}/>
 
 
+</button>
 
 
 
+</div>
 
 
+</header>
 
-      <UserPanel
 
-        open={showPanel}
 
-        onClose={() =>
-          setShowPanel(false)
-        }
 
-      />
 
 
 
+{
 
+showUser &&
 
+<UserPanel
 
+open={showUser}
 
+onClose={()=>setShowUser(false)}
 
-      <NotificationPanel
+/>
 
-        open={showNotifications}
+}
 
-        onClose={() =>
-          setShowNotifications(false)
-        }
 
-      />
 
 
 
+{
 
+showNotifications &&
 
+<NotificationPanel
 
+open={showNotifications}
 
+onClose={()=>setShowNotifications(false)}
 
-      <CommandPalette
+/>
 
-        open={showCommandPalette}
+}
 
-        onClose={() =>
-          setShowCommandPalette(false)
-        }
 
-      />
 
 
 
-    </>
+{
 
+showCommand &&
 
-  );
+<CommandPalette
+
+open={showCommand}
+
+onClose={()=>setShowCommand(false)}
+
+/>
+
+}
+
+
+
+</>
+
+
+);
 
 
 }

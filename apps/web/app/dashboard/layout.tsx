@@ -1,8 +1,6 @@
 "use client";
 
 
-import { usePathname } from "next/navigation";
-
 import AuthGuard from "@/components/auth/AuthGuard";
 
 import DashboardShell from "@/components/dashboard/DashboardShell";
@@ -11,70 +9,27 @@ import DashboardShell from "@/components/dashboard/DashboardShell";
 
 export default function DashboardLayout({
 
-  children,
+children,
 
 }:{
 
-  children: React.ReactNode;
+children:React.ReactNode;
 
 }) {
 
 
-  const pathname = usePathname();
+return (
 
+<AuthGuard>
 
+<DashboardShell>
 
-  /*
-  |--------------------------------------------------------------------------
-  | Prototype Engine Fullscreen Mode
-  |--------------------------------------------------------------------------
-  |
-  | The prototype workspace uses the full viewport and does not render
-  | the standard dashboard shell.
-  |
-  |--------------------------------------------------------------------------
-  */
+{children}
 
+</DashboardShell>
 
-  const isPrototypeRoute =
-    pathname.startsWith(
-      "/dashboard/prototype"
-    );
+</AuthGuard>
 
-
-
-
-  return (
-
-    <AuthGuard>
-
-
-      {isPrototypeRoute ? (
-
-
-        <>
-
-          {children}
-
-        </>
-
-
-      ) : (
-
-
-        <DashboardShell>
-
-          {children}
-
-        </DashboardShell>
-
-
-      )}
-
-
-    </AuthGuard>
-
-  );
-
+);
 
 }

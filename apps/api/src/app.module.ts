@@ -9,6 +9,7 @@ import { UsersModule } from './users/user.module';
 import { AuthModule } from './auth/auth.module';
 import { MailModule } from './mail/mail.module';
 import { OrganizationModule } from './organizations/organization.module';
+import { TasksModule } from './tasks/tasks.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { OrganizationModule } from './organizations/organization.module';
     AuthModule,
     MailModule,
     OrganizationModule,
+    TasksModule,
   ],
   controllers: [AppController],
   providers: [AppService],

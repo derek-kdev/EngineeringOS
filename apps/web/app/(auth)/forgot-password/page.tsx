@@ -4,6 +4,8 @@ import {
   useState,
 } from "react";
 
+import axios from "axios";
+
 import Link from "next/link";
 
 import {
@@ -75,7 +77,7 @@ export default function ForgotPasswordPage() {
 
 
 
-    } catch(error:any) {
+    } catch(error: unknown) {
 
 
       console.error(
@@ -84,13 +86,23 @@ export default function ForgotPasswordPage() {
       );
 
 
-      setError(
+      if (axios.isAxiosError(error)) {
 
-        error?.response?.data?.message ||
+        setError(
 
-        "Unable to process password reset request."
+          error.response?.data?.message ||
 
-      );
+          "Unable to process password reset request."
+
+        );
+
+      } else {
+
+        setError(
+          "Unable to process password reset request."
+        );
+
+      }
 
 
     }

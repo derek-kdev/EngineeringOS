@@ -143,7 +143,7 @@ export default function AdminPage() {
         />
 
         <p className="text-white/70">
-          You don't have access to this area.
+          You don&apos;t have access to this area.
         </p>
 
         <p className="mt-1 text-sm text-white/40">

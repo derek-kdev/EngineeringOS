@@ -2,12 +2,9 @@
 
 import { useState } from "react";
 
-
-import DashboardSidebar from "./DashboardSidebar";
 import DashboardTopbar from "./DashboardTopbar";
 import DashboardFooter from "./DashboardFooter";
 import UserPanel from "./panels/UserPanel";
-
 
 
 type UserPanelType =
@@ -30,16 +27,10 @@ export default function DashboardShell({
 }) {
 
 
-
-  const [expanded, setExpanded] =
-    useState(false);
-
-
-
-  const [activePanel, setActivePanel] =
-    useState<UserPanelType>(null);
-
-
+  const [
+    activePanel,
+    setActivePanel
+  ] = useState<UserPanelType>(null);
 
 
 
@@ -58,17 +49,16 @@ export default function DashboardShell({
 
 
 
-      {/* BACKGROUND IMAGE */}
+      {/* BACKGROUND */}
 
       <div
 
         className="
           absolute
           inset-0
-          bg-[url('/img/thebackgd.jpg')]
+          bg-[url('/img/jjjjk.jpg')]
           bg-cover
           bg-center
-          bg-no-repeat
           blur-[2px]
           scale-105
         "
@@ -96,7 +86,6 @@ export default function DashboardShell({
 
 
 
-      {/* DASHBOARD APPLICATION */}
 
       <div
 
@@ -111,28 +100,9 @@ export default function DashboardShell({
 
 
 
-
-        {/* SIDEBAR */}
-
-        <DashboardSidebar
-
-          expanded={expanded}
-
-          setExpanded={setExpanded}
-
-        />
-
-
-
-
-
-
-
-        {/* TOPBAR */}
+        {/* VS CODE STYLE TOP NAVIGATION */}
 
         <DashboardTopbar
-
-          expanded={expanded}
 
           onOpenPanel={
             setActivePanel
@@ -146,8 +116,7 @@ export default function DashboardShell({
 
 
 
-
-        {/* USER PANEL OVERLAY */}
+        {/* USER OVERLAY PANEL */}
 
         {
           activePanel && (
@@ -172,42 +141,21 @@ export default function DashboardShell({
 
 
 
-
-        {/* PAGE CONTENT */}
+        {/* FULL WIDTH WORKSPACE */}
 
         <main
 
-          className={`
-            
+          className="
             min-h-screen
-            
-            pt-28
-            
-            pb-28
-            
+            w-full
             px-6
-
-
-            transition-all
-
-            duration-300
-
-
-            ${
-              expanded
-
-              ? "ml-[270px]"
-
-              : "ml-[78px]"
-            }
-
-
-          `}
+            pt-12
+            pb-20
+          "
 
         >
 
           {children}
-
 
         </main>
 
@@ -217,8 +165,6 @@ export default function DashboardShell({
 
 
 
-
-        {/* FOOTER */}
 
         <DashboardFooter />
 

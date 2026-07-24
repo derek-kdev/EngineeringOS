@@ -1,5 +1,3 @@
-// apps/web/types/organization.ts
-
 export enum OrganizationRole {
   OWNER = "OWNER",
   ADMIN = "ADMIN",
@@ -39,7 +37,7 @@ export interface Organization {
   industry?: string | null;
   website?: string | null;
   size?: string | null;
-  metadata?: any;
+  metadata?: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
@@ -90,12 +88,14 @@ export interface OrganizationSettings {
   timeFormat: string;
   weekStartsOn: number;
   allowGuestAccess: boolean;
-  metadata?: any;
+  metadata?: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
 }
 
+
 // DTOs
+
 export interface CreateOrganizationDto {
   name: string;
   slug?: string;

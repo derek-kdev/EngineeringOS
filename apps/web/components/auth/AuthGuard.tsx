@@ -17,6 +17,10 @@ import {
   authService,
 } from "@/services/auth.service";
 
+import {
+  EngineeringLoader,
+} from "@/components/loading";
+
 
 
 
@@ -32,6 +36,7 @@ export default function AuthGuard({
 }) {
 
 
+
   const router =
     useRouter();
 
@@ -43,10 +48,12 @@ export default function AuthGuard({
     );
 
 
+
   const accessToken =
     useAuthStore(
       (state) => state.accessToken
     );
+
 
 
   const setUser =
@@ -55,10 +62,12 @@ export default function AuthGuard({
     );
 
 
+
   const clearAuth =
     useAuthStore(
       (state) => state.clearAuth
     );
+
 
 
   const setLoading =
@@ -68,8 +77,13 @@ export default function AuthGuard({
 
 
 
-  const [checking, setChecking] =
-    useState(true);
+  const [
+    checking,
+    setChecking
+  ] = useState(true);
+
+
+
 
 
 
@@ -86,13 +100,18 @@ export default function AuthGuard({
 
 
 
+
+
     async function validateSession() {
+
 
 
       if (!accessToken) {
 
 
+
         clearAuth();
+
 
 
         router.replace(
@@ -100,7 +119,9 @@ export default function AuthGuard({
         );
 
 
+
         setChecking(false);
+
 
 
         return;
@@ -111,7 +132,10 @@ export default function AuthGuard({
 
 
 
+
+
       try {
+
 
 
         setLoading(true);
@@ -132,13 +156,9 @@ export default function AuthGuard({
       } catch(error) {
 
 
-        console.error(
-          "Authentication validation failed:",
-          error
-        );
-
 
         clearAuth();
+
 
 
         router.replace(
@@ -146,19 +166,25 @@ export default function AuthGuard({
         );
 
 
+
       } finally {
+
 
 
         setLoading(false);
 
 
+
         setChecking(false);
+
 
 
       }
 
 
     }
+
+
 
 
 
@@ -190,6 +216,7 @@ export default function AuthGuard({
 
 
 
+
   if (
 
     !hydrated ||
@@ -201,60 +228,13 @@ export default function AuthGuard({
 
     return (
 
-      <main
-
-        className="
-          min-h-screen
-          flex
-          items-center
-          justify-center
-          bg-[#050816]
-          text-white
-        "
-
-      >
-
-        <div className="text-center">
-
-
-          <h1
-
-            className="
-              text-2xl
-              font-bold
-            "
-
-          >
-
-            EngineeringOS
-
-          </h1>
-
-
-
-          <p
-
-            className="
-              mt-3
-              text-white/60
-            "
-
-          >
-
-            Loading workspace...
-
-          </p>
-
-
-
-        </div>
-
-
-      </main>
+      <EngineeringLoader />
 
     );
 
+
   }
+
 
 
 

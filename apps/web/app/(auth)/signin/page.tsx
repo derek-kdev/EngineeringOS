@@ -85,7 +85,7 @@ export default function SignInPage() {
       router.replace("/dashboard");
 
 
-    } catch (error: any) {
+    } catch (error: unknown) {
 
       console.error(
         "Login failed:",
@@ -409,7 +409,7 @@ export default function SignInPage() {
             text-white/60
           "
         >
-          Don't have an account?
+          Don&apos;t have an account?
 
           <Link
             href="/register"

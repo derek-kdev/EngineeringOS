@@ -124,6 +124,8 @@ model User {
 
   accountUnlockTokens AccountUnlockToken[]
 
+  createdTasks EngineeringTask[]
+
   createdApiKeys ApiKey[]     @relation("ApiKeyCreator")
   invitations    Invitation[]
 
@@ -291,6 +293,8 @@ model Organization {
 
   auditLogs AuditLog[]
 
+  tasks EngineeringTask[]
+
   @@index([slug])
   @@index([ownerId])
   @@index([createdAt])
@@ -346,6 +350,8 @@ model Membership {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  assignedTasks EngineeringTask[]
 
   @@unique([organizationId, userId])
   @@index([organizationId])
@@ -530,4 +536,82 @@ model AccountUnlockToken {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+model EngineeringTask {
+
+  id String @id @default(cuid())
+
+  organizationId String
+
+  assignedToId String?
+
+  createdById String
+
+
+  title String
+
+  description String?
+
+
+  taskType TaskType @default(GENERAL)
+
+  status TaskStatus @default(PENDING)
+
+
+  dueDate DateTime?
+
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  assignedTo Membership? @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  createdBy User @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+
+
+  @@index([organizationId])
+
+  @@index([assignedToId])
+
+  @@index([status])
+
+}
+
+
+
+enum TaskStatus {
+
+  PENDING
+
+  IN_PROGRESS
+
+  COMPLETED
+
+  CANCELLED
+
+}
+
+
+
+enum TaskType {
+
+  GENERAL
+
+  CALCULATION
+
+  SIMULATION
+
+  CAD
+
+  RESEARCH
+
+  REVIEW
+
 }

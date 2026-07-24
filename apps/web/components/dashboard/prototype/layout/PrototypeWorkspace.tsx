@@ -1,356 +1,132 @@
 "use client";
 
-import React from "react";
-
-import PrototypeHeader from "./PrototypeHeader";
-import PrototypeToolbar from "./PrototypeToolbar";
+import { useState, useEffect, useRef } from "react";
 import PrototypeViewport from "./PrototypeViewport";
-import PrototypeProperties from "./PrototypeProperties";
-import PrototypeConsole from "./PrototypeConsole";
-
+import PrototypeMenuBar from "./PrototypeMenuBar";
+import PrototypeToolbar from "./PrototypeToolbar";
+import AssemblyTree from "./AssemblyTree";
+import SpecificationPanel from "./SpecificationPanel";
+import PrototypeStatusBar from "./PrototypeStatusBar";
 import usePrototypeEngine from "@/hooks/usePrototypeEngine";
 
-
-
 export default function PrototypeWorkspace() {
+  const { running, wireframe, toggleWireframe, startSimulation, stopSimulation } =
+    usePrototypeEngine();
 
+  // UI visibility states – auto‑hide after 3s of inactivity
+  const [menuVisible, setMenuVisible] = useState(true);
+  const [toolbarVisible, setToolbarVisible] = useState(true);
+  const [sidePanelsVisible, setSidePanelsVisible] = useState(false); // hidden by default
+  const hideTimer = useRef<NodeJS.Timeout | null>(null);
 
-  const {
-    leftExpanded,
+  // Reset the auto‑hide timer and show UI
+  const showUI = () => {
+    setMenuVisible(true);
+    setToolbarVisible(true);
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    hideTimer.current = setTimeout(() => {
+      setMenuVisible(false);
+      setToolbarVisible(false);
+    }, 3000);
+  };
 
-    running,
+  // Toggle side panels (AssemblyTree + SpecificationPanel) with a keyboard shortcut (e.g., ⌘B)
+  const toggleSidePanels = () => {
+    setSidePanelsVisible((prev) => !prev);
+  };
 
-    wireframe,
-
-
-    toggleLeftPanel,
-
-    startSimulation,
-
-    stopSimulation,
-
-    toggleWireframe,
-
-
-  } = usePrototypeEngine();
-
-
-
-
+  // Set up event listeners for mouse/keyboard activity
+  useEffect(() => {
+    const handleActivity = () => showUI();
+    const handleKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "b") {
+        e.preventDefault();
+        toggleSidePanels();
+      }
+      showUI();
+    };
+    window.addEventListener("mousemove", handleActivity);
+    window.addEventListener("keydown", handleKey);
+    return () => {
+      window.removeEventListener("mousemove", handleActivity);
+      window.removeEventListener("keydown", handleKey);
+      if (hideTimer.current) clearTimeout(hideTimer.current);
+    };
+  }, []);
 
   return (
-
     <div
-      className="
-      fixed
-      inset-0
-      flex
-      flex-col
-      bg-[#050b18]
-      text-slate-200
-      overflow-hidden
-      "
+      className="fixed inset-0 overflow-hidden bg-[#0B132B] text-white select-none"
+      onMouseMove={showUI}
+      onKeyDown={showUI}
     >
-
-
-
-      {/* =====================================================
-          APPLICATION HEADER
-      ====================================================== */}
-
-      <PrototypeHeader />
-
-
-
-
-
-
-
-      {/* =====================================================
-          SIMULATION TOOLBAR
-      ====================================================== */}
-
-      <PrototypeToolbar
-
+      {/* ===== FULL‑SCREEN 3D VIEWPORT ===== */}
+      <PrototypeViewport
         running={running}
-
-        onRun={startSimulation}
-
-        onStop={stopSimulation}
-
+        wireframe={wireframe}
+        onToggleWireframe={toggleWireframe}
       />
 
-
-
-
-
-
-
-
-
-      {/* =====================================================
-          ENGINE WORKSPACE
-      ====================================================== */}
-
-
+      {/* ===== SUBTLE GRID OVERLAY (drawn on the background) ===== */}
       <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(0, 210, 255, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 210, 255, 0.05) 1px, transparent 1px)
+          `,
+          backgroundSize: "40px 40px",
+        }}
+      />
 
-        className="
-        flex
-        flex-1
-        overflow-hidden
-        "
-
+      {/* ===== TOP MENU – AUTO‑HIDE ===== */}
+      <div
+        className={`
+          absolute top-0 left-0 right-0 z-50
+          transition-all duration-300
+          ${menuVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-8 pointer-events-none"}
+        `}
       >
-
-
-
-
-
-        {/* =====================================================
-            COMPONENT LIBRARY
-        ====================================================== */}
-
-
-        <aside
-
-          className={`
-          
-          ${
-            leftExpanded
-            ?
-            "w-60"
-            :
-            "w-16"
-          }
-
-
-          bg-[#0c1f36]
-
-          border-r
-
-          border-white/10
-
-          transition-all
-
-          duration-300
-
-          p-3
-
-          `}
-
-        >
-
-
-          <button
-
-            onClick={toggleLeftPanel}
-
-            className="
-            mb-4
-            text-slate-400
-            hover:text-white
-            transition
-            "
-
-          >
-
-            ☰
-
-          </button>
-
-
-
-          <ComponentButton
-            icon="⚙️"
-            label="Mechanical"
-            expanded={leftExpanded}
-          />
-
-
-
-          <ComponentButton
-            icon="⚡"
-            label="Electrical"
-            expanded={leftExpanded}
-          />
-
-
-
-          <ComponentButton
-            icon="💧"
-            label="Fluid Systems"
-            expanded={leftExpanded}
-          />
-
-
-
-          <ComponentButton
-            icon="📡"
-            label="Controls"
-            expanded={leftExpanded}
-          />
-
-
-
-        </aside>
-
-
-
-
-
-
-
-
-
-        {/* =====================================================
-            ENGINE VIEWPORT
-        ====================================================== */}
-
-
-        <main
-
-          className="
-          flex-1
-          relative
-          bg-[#101d3a]
-          p-4
-          "
-
-        >
-
-
-          <PrototypeViewport
-
-            running={running}
-
-            wireframe={wireframe}
-
-            onToggleWireframe={
-              toggleWireframe
-            }
-
-          />
-
-
-        </main>
-
-
-
-
-
-
-
-
-        {/* =====================================================
-            PROPERTY INSPECTOR
-        ====================================================== */}
-
-
-        <PrototypeProperties />
-
-
-
+        <PrototypeMenuBar />
       </div>
 
+      {/* ===== RIGHT TOOLBAR – ICON ONLY, AUTO‑HIDE ===== */}
+      <div
+        className={`
+          absolute right-3 top-1/2 -translate-y-1/2 z-50
+          transition-all duration-300
+          ${toolbarVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8 pointer-events-none"}
+        `}
+      >
+        <PrototypeToolbar
+          running={running}
+          onRun={startSimulation}
+          onStop={stopSimulation}
+          onToggleSidePanels={toggleSidePanels} // pass toggle function to toolbar
+        />
+      </div>
 
+      {/* ===== SIDE PANELS (AssemblyTree + SpecificationPanel) – TOGGLED ===== */}
+      {sidePanelsVisible && (
+        <>
+          <div className="absolute left-3 top-16 bottom-16 z-40 w-64 bg-[#0B132B]/80 backdrop-blur-sm border border-white/10 rounded-lg overflow-hidden">
+            <AssemblyTree />
+          </div>
+          <div className="absolute right-16 top-16 bottom-16 z-40 w-80 bg-[#0B132B]/80 backdrop-blur-sm border border-white/10 rounded-lg overflow-hidden">
+            <SpecificationPanel />
+          </div>
+        </>
+      )}
 
+      {/* ===== KEYBOARD SHORTCUT HINT ===== */}
+      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-30 text-xs text-white/20 pointer-events-none">
+        Press ⌘B to toggle side panels · ⌘1–9 for tools
+      </div>
 
-
-
-
-
-      {/* =====================================================
-          SYSTEM CONSOLE
-      ====================================================== */}
-
-
-      <PrototypeConsole />
-
-
-
+      {/* ===== STATUS HUD – THIN, ALWAYS VISIBLE ===== */}
+      <div className="absolute bottom-0 left-0 right-0 z-40">
+        <PrototypeStatusBar />
+      </div>
     </div>
-
-
   );
-
-}
-
-
-
-
-
-
-
-
-function ComponentButton({
-
-  icon,
-
-  label,
-
-  expanded,
-
-
-}:{
-
-  icon:string;
-
-  label:string;
-
-  expanded:boolean;
-
-
-}){
-
-
-  return (
-
-    <div
-
-      className="
-      relative
-      flex
-      items-center
-      gap-3
-      bg-[#14233f]
-      rounded
-      p-2
-      mb-2
-      cursor-pointer
-      hover:bg-[#1a2d52]
-      transition
-      "
-
-    >
-
-
-      <span>
-
-        {icon}
-
-      </span>
-
-
-
-
-      {
-        expanded && (
-
-          <span className="text-sm">
-
-            {label}
-
-          </span>
-
-        )
-      }
-
-
-
-    </div>
-
-  );
-
-
 }

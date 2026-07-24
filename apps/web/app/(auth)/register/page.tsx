@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { AxiosError } from "axios";
+
 import Link from "next/link";
 
 import { useRouter } from "next/navigation";
@@ -129,7 +131,11 @@ export default function RegisterPage() {
 
 
     }
-    catch(error:any){
+    catch(error: unknown){
+
+      const axiosError = error as AxiosError<{
+        message?: string;
+      }>;
 
 
       console.error(
@@ -140,7 +146,7 @@ export default function RegisterPage() {
 
       setError(
 
-        error?.response?.data?.message ||
+        axiosError.response?.data?.message ||
 
         "Registration failed. Please try again."
 
@@ -267,7 +273,7 @@ export default function RegisterPage() {
 
             <InputField
 
-              icon={<User size={18}/>}
+              icon={User}
 
               name="firstName"
 
@@ -282,7 +288,7 @@ export default function RegisterPage() {
 
             <InputField
 
-              icon={<User size={18}/>}
+              icon={User}
 
               name="lastName"
 
@@ -303,7 +309,7 @@ export default function RegisterPage() {
 
           <InputField
 
-            icon={<Mail size={18}/>}
+            icon={Mail}
 
             name="email"
 
@@ -432,6 +438,18 @@ export default function RegisterPage() {
 
 
 
+type InputFieldProps = {
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  name: string;
+  placeholder: string;
+  value: string;
+  onChange: (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => void;
+  type?: string;
+};
+
+
 function InputField({
   icon,
   name,
@@ -439,7 +457,7 @@ function InputField({
   value,
   onChange,
   type="text",
-}:any){
+}: InputFieldProps){
 
   return (
 
@@ -456,7 +474,10 @@ function InputField({
         "
       >
 
-        {icon}
+        {icon && (() => {
+          const Icon = icon;
+          return <Icon size={18} />;
+        })()}
 
       </div>
 
@@ -505,6 +526,18 @@ function InputField({
 
 
 
+type PasswordFieldProps = {
+  name: string;
+  placeholder: string;
+  value: string;
+  visible: boolean;
+  setVisible: (visible: boolean) => void;
+  onChange: (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => void;
+};
+
+
 function PasswordField({
   name,
   placeholder,
@@ -512,7 +545,7 @@ function PasswordField({
   visible,
   setVisible,
   onChange,
-}:any){
+}: PasswordFieldProps){
 
 
   return (

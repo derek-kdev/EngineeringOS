@@ -29,7 +29,7 @@ export function useOrganization(id: string) {
   };
 }
 
-export function useMembers(organizationId: string) {
+export function useOrganizationMembers(organizationId: string) {
   const { data, error, mutate } = useSWR<Membership[]>(
     organizationId ? `/organizations/${organizationId}/members` : null,
     () => organizationsApi.listMembers(organizationId)
@@ -40,4 +40,12 @@ export function useMembers(organizationId: string) {
     isError: error,
     mutate,
   };
+}
+
+/**
+ * Backwards compatibility alias.
+ * Existing workspace components use useMembers.
+ */
+export function useMembers(organizationId: string) {
+  return useOrganizationMembers(organizationId);
 }

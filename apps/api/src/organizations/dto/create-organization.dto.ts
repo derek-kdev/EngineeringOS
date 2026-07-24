@@ -27,6 +27,6 @@ export class CreateOrganizationDto {
   metadata?: Record<string, any>;
 
   @IsOptional()
-  @IsObject()
+  @IsString()
   slug?: string;
 }

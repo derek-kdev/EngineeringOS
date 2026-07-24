@@ -1,4 +1,3 @@
-// apps/web/next.config.ts
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -6,10 +5,9 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "i.pinimg.com",
+        hostname: "res.cloudinary.com",
       },
     ],
-    qualities: [100, 75], // ✅ Allow quality 100 in addition to default 75
   },
 };
 

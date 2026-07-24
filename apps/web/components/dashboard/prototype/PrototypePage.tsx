@@ -4,16 +4,15 @@
 import PrototypeWorkspace from "./layout/PrototypeWorkspace";
 
 
-export default function PrototypePage() {
+export default function PrototypePage(){
 
 
   return (
 
     <div
       className="
-      h-screen
-      w-screen
-      overflow-hidden
+      w-full
+      h-full
       "
     >
 
@@ -22,5 +21,6 @@ export default function PrototypePage() {
     </div>
 
   );
+
 
 }

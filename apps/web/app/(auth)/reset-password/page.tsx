@@ -296,7 +296,7 @@ export default function ResetPasswordPage(){
 
 
     }
-    catch(error:any){
+    catch(error: unknown){
 
 
 
@@ -310,7 +310,7 @@ export default function ResetPasswordPage(){
 
       setError(
 
-        error?.response?.data?.message ||
+        axiosError.response?.data?.message ||
 
         "Unable to reset password."
 

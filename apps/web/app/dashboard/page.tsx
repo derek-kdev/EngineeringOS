@@ -1,119 +1,199 @@
 "use client";
 
-import { useAuth } from "@/hooks/useAuth";
+import Image from "next/image";
+import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+const links = [
+  {
+    label: "New Project",
+    shortcut: "Ctrl+Shift+N",
+    href: "/dashboard/projects",
+  },
+  {
+    label: "Research",
+    shortcut: "Ctrl+Shift+R",
+    href: "/dashboard/research",
+  },
+  {
+    label: "Calculations",
+    shortcut: "Ctrl+Shift+C",
+    href: "/dashboard/calculations",
+  },
+  {
+    label: "Prototype",
+    shortcut: "Ctrl+Shift+P",
+    href: "/dashboard/prototype",
+  },
+  {
+    label: "Community",
+    shortcut: "Ctrl+Shift+C",
+    href: "/dashboard/community",
+  },
+  {
+    label: "Open AI Assistant",
+    shortcut: "Ctrl+Alt+I",
+    href: "/dashboard/ai",
+  },
+];
 
 
 export default function DashboardPage() {
 
-
-  const {
-    user,
-  } = useAuth();
+  const router = useRouter();
 
 
+  useEffect(() => {
+
+    const handleShortcut = (event: KeyboardEvent) => {
+
+      const modifier =
+        (event.ctrlKey || event.metaKey) &&
+        event.shiftKey;
+
+      if (!modifier) return;
 
 
-  if (!user) {
+      switch(event.key.toLowerCase()) {
 
-    return null;
+        case "n":
+          event.preventDefault();
+          router.push("/dashboard/projects/new");
+          break;
 
-  }
+
+        case "r":
+          event.preventDefault();
+          router.push("/dashboard/research");
+          break;
 
 
+        case "c":
+          event.preventDefault();
+          router.push("/dashboard/calculations");
+          break;
+
+
+        case "p":
+          event.preventDefault();
+          router.push("/dashboard/prototype");
+          break;
+
+      }
+
+    };
+
+
+    window.addEventListener(
+      "keydown",
+      handleShortcut
+    );
+
+
+    return () =>
+      window.removeEventListener(
+        "keydown",
+        handleShortcut
+      );
+
+
+  }, [router]);
 
 
 
   return (
 
-    <main
-
-      className="
-        min-h-screen
-        bg-[#0B132B]
-        text-white
-        p-10
-      "
-
-    >
-
-      <h1
-
-        className="
-          text-4xl
-          font-bold
-        "
-
-      >
-
-        Welcome, {user.firstName}
-
-      </h1>
+    <div className="
+      fixed
+      inset-0
+      flex
+      items-center
+      justify-center
+      bg-[#0B132B]
+      p-4
+    ">
 
 
+      <div className="
+        text-center
+        space-y-10
+      ">
 
-      <p
 
-        className="
-          mt-2
-          text-white/70
-        "
+        {/* Logo */}
 
-      >
+        <div className="flex justify-center">
 
-        {user.email}
+          <Image
+            src="/img/our_logo.jpg"
+            alt="EngineeringOS"
+            width={160}
+            height={160}
+            className="
+              rounded-full
+              object-cover
+              shadow-lg
+            "
+          />
 
-      </p>
+        </div>
 
 
 
+        {/* EngineeringOS Links */}
+
+        <div className="
+          space-y-4
+          text-left
+        ">
 
 
-      <div
+          {links.map((item) => (
 
-        className="
-          mt-8
-          rounded-xl
-          border
-          border-white/10
-          bg-white/5
-          p-6
-        "
+            <Link
+              key={item.label}
+              href={item.href}
+              className="
+                flex
+                min-w-[320px]
+                items-center
+                justify-between
+                text-white
+                text-base
+                transition
+                hover:text-[#00D2FF]
+              "
+            >
 
-      >
-
-        <h2
-
-          className="
-            text-xl
-            font-semibold
-          "
-
-        >
-
-          Dashboard
-
-        </h2>
+              <span>
+                {item.label}
+              </span>
 
 
+              <span className="
+                ml-8
+                font-mono
+                text-sm
+                text-white/40
+              ">
+                {item.shortcut}
+              </span>
 
-        <p
 
-          className="
-            mt-2
-            text-white/60
-          "
+            </Link>
 
-        >
+          ))}
 
-          Authentication is working successfully.
 
-        </p>
+        </div>
+
 
 
       </div>
 
 
-    </main>
+    </div>
 
   );
 

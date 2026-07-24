@@ -1,50 +1,141 @@
-/*
-|--------------------------------------------------------------------------
-| Avatar Storage Adapter
-|--------------------------------------------------------------------------
-|
-| Frontend-only abstraction for avatar uploads.
-|
-| Currently:
-| - Generates a local preview URL.
-|
-| Later:
-| - Replace this implementation with:
-|   Cloudinary
-|   AWS S3
-|   Cloudflare R2
-|   Supabase Storage
-|
-| ProfileSection.tsx should not need changes
-| when the storage provider changes.
-|
-|--------------------------------------------------------------------------
-*/
-
-
 export async function uploadAvatar(
-  file: File
+  file: File | Blob
 ): Promise<string> {
 
 
-  /*
-  |--------------------------------------------------------------------------
-  | Temporary Development Implementation
-  |--------------------------------------------------------------------------
-  |
-  | Creates a browser preview URL.
-  |
-  | This does NOT upload permanently.
-  |
-  |--------------------------------------------------------------------------
-  */
+  const cloudName =
+    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 
 
-  const previewUrl =
-    URL.createObjectURL(file);
+  const uploadPreset =
+    process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
 
 
-  return previewUrl;
+  if(!cloudName){
+
+    throw new Error(
+      "Cloudinary configuration missing"
+    );
+
+  }
+
+
+
+  if(!uploadPreset){
+
+    throw new Error(
+      "Cloudinary upload configuration missing"
+    );
+
+  }
+
+
+
+
+
+
+  const formData =
+    new FormData();
+
+
+
+  formData.append(
+    "file",
+    file
+  );
+
+
+  formData.append(
+    "upload_preset",
+    uploadPreset
+  );
+
+
+
+
+
+
+  const response =
+    await fetch(
+
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+
+      {
+
+        method:"POST",
+
+        body:formData,
+
+      }
+
+    );
+
+
+
+
+
+
+
+
+  if(!response.ok){
+
+
+    let message =
+      "Avatar upload failed";
+
+
+    try{
+
+
+      const error =
+        await response.json();
+
+
+      message =
+        error?.error?.message
+        ||
+        message;
+
+
+    }
+
+    catch{
+
+      // ignore parsing errors
+
+    }
+
+
+
+    throw new Error(message);
+
+
+  }
+
+
+
+
+
+
+
+  const data =
+    await response.json();
+
+
+
+
+  if(!data.secure_url){
+
+    throw new Error(
+      "Invalid upload response"
+    );
+
+  }
+
+
+
+  return data.secure_url;
+
 
 }
