@@ -7,8 +7,67 @@ import {
   Smartphone,
 } from "lucide-react";
 
+import { useState } from "react";
+
+import api from "@/lib/api";
+
 
 export default function SecuritySection() {
+
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+
+
+  async function handleChangePassword() {
+
+    try {
+
+      setLoading(true);
+      setMessage("");
+
+      const user = JSON.parse(
+        localStorage.getItem("user") || "{}"
+      );
+
+
+      if (!user.email) {
+
+        setMessage(
+          "Unable to find account email."
+        );
+
+        return;
+
+      }
+
+
+      await api.post(
+        "/auth/forgot-password",
+        {
+          email: user.email,
+        }
+      );
+
+
+      setMessage(
+        "Password reset email sent. Check your inbox."
+      );
+
+
+    } catch (error) {
+
+      setMessage(
+        "Unable to send password reset email."
+      );
+
+    } finally {
+
+      setLoading(false);
+
+    }
+
+  }
+
 
 
   return (
@@ -30,66 +89,43 @@ export default function SecuritySection() {
 
 
 
-
-
       <SecurityRow
-
         icon={<ShieldCheck size={18}/>}
-
         label="Account Status"
-
         value="Protected"
-
       />
 
 
 
-
-
       <SecurityRow
-
         icon={<KeyRound size={18}/>}
-
         label="Password"
-
         value="Last updated recently"
-
       />
 
 
 
-
-
       <SecurityRow
-
         icon={<Smartphone size={18}/>}
-
         label="Two Factor Authentication"
-
         value="Not enabled"
-
       />
-
-
 
 
 
       <SecurityRow
-
         icon={<Lock size={18}/>}
-
         label="Login Sessions"
-
         value="Active session"
-
       />
-
-
-
 
 
 
       <button
+
+        onClick={handleChangePassword}
+
+        disabled={loading}
 
         className="
           mt-3
@@ -103,14 +139,36 @@ export default function SecuritySection() {
           text-[#00D2FF]
           hover:bg-[#00D2FF]/20
           transition
+          disabled:opacity-50
         "
 
       >
 
-        Change Password
+        {
+          loading
+            ? "Sending Reset Email..."
+            : "Change Password"
+        }
+
 
       </button>
 
+
+      {
+        message && (
+
+          <p className="
+            text-xs
+            text-[#00D2FF]
+            mt-2
+          ">
+
+            {message}
+
+          </p>
+
+        )
+      }
 
 
     </div>
@@ -118,8 +176,6 @@ export default function SecuritySection() {
   );
 
 }
-
-
 
 
 
@@ -164,7 +220,6 @@ function SecurityRow({
         {icon}
 
       </div>
-
 
 
 

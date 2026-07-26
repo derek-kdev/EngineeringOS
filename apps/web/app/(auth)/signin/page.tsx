@@ -93,10 +93,24 @@ export default function SignInPage() {
       );
 
 
-      setError(
+      const message =
         error?.response?.data?.message ||
-        "Unable to sign in. Please check your credentials."
-      );
+        "Unable to sign in. Please check your credentials.";
+
+
+      if (
+        message ===
+        "Your account has been locked due to multiple failed login attempts. A password reset email has been sent."
+      ) {
+
+        router.replace("/account-locked");
+
+        return;
+
+      }
+
+
+      setError(message);
 
 
     } finally {

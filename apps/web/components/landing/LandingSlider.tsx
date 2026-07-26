@@ -248,47 +248,6 @@ export default function LandingSlider() {
                   "
                 >
 
-                  <button
-                    className="
-                      rounded-full
-                      px-7
-                      py-2.5
-                      text-sm
-                      md:text-base
-                      font-semibold
-                      text-white
-                      bg-gradient-to-r
-                      from-[#FF6B00]
-                      to-[#FF9D00]
-                      shadow-[0_0_30px_rgba(255,107,0,0.45)]
-                      hover:scale-105
-                      transition
-                    "
-                  >
-                    Get Started
-                  </button>
-
-
-                  <button
-                    className="
-                      rounded-full
-                      px-7
-                      py-2.5
-                      text-sm
-                      md:text-base
-                      font-semibold
-                      text-white
-                      border
-                      border-[#00D2FF]/40
-                      bg-white/5
-                      backdrop-blur-md
-                      hover:bg-[#00D2FF]/10
-                      transition
-                    "
-                  >
-                    Explore Platform
-                  </button>
-
                 </motion.div>
 
 

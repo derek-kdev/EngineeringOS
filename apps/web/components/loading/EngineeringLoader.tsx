@@ -1,20 +1,62 @@
 "use client";
 
-import {
-  motion,
-} from "framer-motion";
-
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import Filament from "./Filament";
 
 
+const loadingImages = [
+  "/img/loading1.jpg",
+  "/img/loading2.jpg",
+  "/img/loading3.jpg",
+  "/img/loading4.jpg",
+  "/img/loading5.jpg",
+  "/img/loading6.jpg",
+  "/img/loading7.png",
+];
+
 
 export default function EngineeringLoader() {
+
+  const [image, setImage] = useState(
+    loadingImages[0]
+  );
+
+
+  useEffect(() => {
+
+    const key = "engineeringos_loader_index";
+
+    const current =
+      Number(
+        localStorage.getItem(key) || "0"
+      );
+
+
+    const next =
+      current % loadingImages.length;
+
+
+    setImage(
+      loadingImages[next]
+    );
+
+
+    localStorage.setItem(
+      key,
+      String(
+        (next + 1) % loadingImages.length
+      )
+    );
+
+
+  }, []);
+
 
 
   return (
 
     <main
-
       className="
         fixed
         inset-0
@@ -26,12 +68,10 @@ export default function EngineeringLoader() {
         bg-black
         overflow-hidden
       "
-
     >
 
 
       <div
-
         className="
           relative
           h-80
@@ -40,17 +80,55 @@ export default function EngineeringLoader() {
           items-center
           justify-center
         "
-
       >
 
 
         <Filament />
 
 
+        <motion.img
+
+          src={image}
+
+          alt="EngineeringOS Loading"
+
+          className="
+            relative
+            z-10
+            h-44
+            w-44
+            rounded-full
+            object-cover
+            border
+            border-white/20
+            shadow-2xl
+          "
+
+
+          animate={{
+
+            rotate:[
+              0,
+              360
+            ]
+
+          }}
+
+
+          transition={{
+
+            duration:12,
+
+            repeat:Infinity,
+
+            ease:"linear"
+
+          }}
+
+        />
+
 
       </div>
-
-
 
 
 
@@ -90,8 +168,6 @@ export default function EngineeringLoader() {
 
 
 
-
-
       <motion.p
 
         className="
@@ -124,7 +200,6 @@ export default function EngineeringLoader() {
         Building engineering intelligence...
 
       </motion.p>
-
 
 
     </main>

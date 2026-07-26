@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Settings } from "lucide-react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 
 export default function LandingTopbar() {
@@ -50,27 +50,26 @@ export default function LandingTopbar() {
 
           <motion.div
             whileHover={{
-              rotate: 20,
+              scale: 1.08,
             }}
             transition={{
               duration: 0.3,
             }}
             className="
-              flex
+              relative
               h-10
               w-10
-              items-center
-              justify-center
+              overflow-hidden
               rounded-full
-              bg-gradient-to-br
-              from-[#FF6B00]
-              to-[#FFB300]
-              shadow-[0_0_25px_rgba(255,107,0,0.45)]
+              shadow-[0_0_25px_rgba(0,210,255,0.35)]
             "
           >
-            <Settings
-              size={22}
-              className="text-white"
+            <Image
+              src="/img/our_logo.jpg"
+              alt="EngineeringOS Logo"
+              fill
+              className="object-cover"
+              priority
             />
           </motion.div>
 
@@ -108,7 +107,7 @@ export default function LandingTopbar() {
         >
 
           <Link
-            href="/contact"
+            href="/contacts"
             className="
               rounded-full
               border

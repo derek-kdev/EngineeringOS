@@ -1,19 +1,15 @@
 "use client";
 
-import {
-  motion,
-} from "framer-motion";
-
+import { motion } from "framer-motion";
 
 
 export default function Filament(){
 
-
-  const paths = Array.from(
-    { length: 14 },
-    (_,index)=>index
-  );
-
+  const paths =
+    Array.from(
+      { length:14 },
+      (_,index)=>index
+    );
 
 
   return (
@@ -31,7 +27,6 @@ export default function Filament(){
       fill="none"
 
     >
-
 
 
       <defs>
@@ -61,6 +56,7 @@ export default function Filament(){
         </filter>
 
 
+
         <linearGradient
 
           id="energy"
@@ -75,36 +71,16 @@ export default function Filament(){
 
         >
 
-          <stop
+          <stop offset="0%" stopColor="#00D2FF"/>
 
-            offset="0%"
+          <stop offset="50%" stopColor="#ffffff"/>
 
-            stopColor="#00D2FF"
-
-          />
-
-          <stop
-
-            offset="50%"
-
-            stopColor="#ffffff"
-
-          />
-
-          <stop
-
-            offset="100%"
-
-            stopColor="#FF6B00"
-
-          />
+          <stop offset="100%" stopColor="#FF6B00"/>
 
         </linearGradient>
 
 
       </defs>
-
-
 
 
 
@@ -116,6 +92,7 @@ export default function Filament(){
           <motion.path
 
             key={item}
+
 
             d={`
               M200 200
@@ -137,8 +114,7 @@ export default function Filament(){
 
 
             opacity={
-              0.15 +
-              item * 0.04
+              0.15 + item * 0.04
             }
 
 
@@ -158,7 +134,6 @@ export default function Filament(){
                 0.8
               ],
 
-
               opacity:[
                 0.2,
                 0.8,
@@ -172,8 +147,7 @@ export default function Filament(){
 
               rotate:{
 
-                duration:
-                  10 + item * 0.3,
+                duration:10 + item * 0.3,
 
                 repeat:Infinity,
 
@@ -184,8 +158,7 @@ export default function Filament(){
 
               scale:{
 
-                duration:
-                  4 + item * 0.2,
+                duration:4 + item * 0.2,
 
                 repeat:Infinity,
 
@@ -196,8 +169,7 @@ export default function Filament(){
 
               opacity:{
 
-                duration:
-                  3 + item * 0.1,
+                duration:3 + item * 0.1,
 
                 repeat:Infinity,
 
@@ -205,17 +177,14 @@ export default function Filament(){
 
               }
 
-
             }}
 
 
             style={{
 
-              transformOrigin:
-                "200px 200px"
+              transformOrigin:"200px 200px"
 
             }}
-
 
           />
 
@@ -225,11 +194,8 @@ export default function Filament(){
       }
 
 
-
     </svg>
 
-
   );
-
 
 }
