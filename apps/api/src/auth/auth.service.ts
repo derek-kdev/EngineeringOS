@@ -5,7 +5,11 @@ import {
   Injectable,
   UnauthorizedException,
   NotFoundException,
+  HttpStatus,
+  HttpException,
 } from '@nestjs/common';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { LoginAttempt } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/user.service';
 import { PasswordService } from '../common/security/password.service';
@@ -19,6 +23,7 @@ import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { createHash } from 'crypto';
 import { OrganizationService } from '../organizations/organization.service';
 import { CreateOrganizationDto } from '../organizations/dto';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -129,20 +134,80 @@ export class AuthService {
     ipAddress?: string,
     userAgent?: string,
   ): Promise<{ user: any; tokens: AuthTokens }> {
-    const user = await this.validateUser(dto.email, dto.password);
+    // 1. Find user by email
+    const user = await this.usersService.findByEmail(dto.email);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Everything in one transaction
+    // 2. Check if account is locked
+    const attemptRecord = await this.prisma.loginAttempt.findUnique({
+      where: { email: user.email },
+    });
+    if (attemptRecord && attemptRecord.lockedUntil !== null) {
+      // lockedUntil is set to a far‑future date, so treat as locked
+      throw new HttpException(
+        {
+          code: 'ACCOUNT_LOCKED',
+          message:
+            'Your account has been locked due to multiple failed login attempts. A password reset email has been sent.',
+        },
+        HttpStatus.LOCKED, // 423
+      );
+    }
+
+    // 3. Validate password
+    const isMatch = await this.passwordService.compare(
+      dto.password,
+      user.passwordHash,
+    );
+    if (!isMatch) {
+      // Handle failed attempt – atomic increment and possible lock
+      const { locked, newlyLocked } = await this.handleFailedLoginAttempt(
+        user.email,
+      );
+      if (locked) {
+        // If this is the first time the account becomes locked, send a password reset email
+        if (newlyLocked) {
+          setImmediate(() => {
+            this.passwordResetService
+              .requestPasswordReset(user.email)
+              .catch((err) => {
+                console.error('Failed to send password reset email:', err);
+              });
+          });
+        }
+        // Throw a locked exception
+        throw new HttpException(
+          {
+            code: 'ACCOUNT_LOCKED',
+            message:
+              'Your account has been locked due to multiple failed login attempts. A password reset email has been sent.',
+          },
+          HttpStatus.LOCKED,
+        );
+      }
+      // Not locked yet – generic invalid credentials
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // 4. Successful login – proceed with token generation inside a transaction
     const tokens = await this.prisma.$transaction(async (tx) => {
-      // 1. Generate tokens
+      // Reset login attempts
+      await tx.loginAttempt.upsert({
+        where: { email: user.email },
+        update: { attempts: 0, lockedUntil: null },
+        create: { email: user.email, attempts: 0 },
+      });
+
+      // Generate tokens (unchanged)
       const tokens = await this.generateTokens({
         id: user.id,
         email: user.email,
         role: user.role,
       });
-      // 2. Store refresh token
+
+      // Store refresh token, update lastLogin, create session (unchanged)
       const refreshTokenHash = this.hashToken(tokens.refreshToken);
       const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
       await tx.refreshToken.create({
@@ -153,13 +218,11 @@ export class AuthService {
         },
       });
 
-      // 3. Update last login timestamp
       await tx.user.update({
         where: { id: user.id },
         data: { lastLoginAt: new Date() },
       });
 
-      // 4. Create a session record
       const sessionExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
       await tx.session.create({
         data: {
@@ -252,7 +315,21 @@ export class AuthService {
   // ─── Reset Password ────────────────────────────────────────────────
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
-    await this.passwordResetService.resetPassword(token, newPassword);
+    // 1. Reset password and get the user ID atomically
+    const userId = await this.passwordResetService.resetPassword(
+      token,
+      newPassword,
+    );
+
+    // 2. Unlock the account and reset login attempts
+    const user = await this.usersService.findById(userId);
+    if (user) {
+      await this.prisma.loginAttempt.upsert({
+        where: { email: user.email },
+        update: { attempts: 0, lockedUntil: null },
+        create: { email: user.email, attempts: 0 },
+      });
+    }
   }
 
   // ─── Change Password ────────────────────────────────────────────
@@ -296,6 +373,98 @@ export class AuthService {
   }
 
   // ─── Internal Helpers ──────────────────────────────────────────────
+
+  /**
+   * Atomically increments login attempts for the given email.
+   * Uses optimistic locking with retries to avoid raw SQL.
+   * Returns whether the account is now locked and whether this is the first lock.
+   */
+  private async handleFailedLoginAttempt(
+    email: string,
+    maxRetries = 3,
+  ): Promise<{ locked: boolean; newlyLocked: boolean }> {
+    let attemptsLeft = maxRetries;
+    while (attemptsLeft > 0) {
+      attemptsLeft--;
+      const result = await this.prisma.$transaction(async (tx) => {
+        // 1. Get current record (or create if missing)
+        let record = await tx.loginAttempt.findUnique({
+          where: { email },
+        });
+
+        if (!record) {
+          try {
+            record = await tx.loginAttempt.create({
+              data: { email, attempts: 0 },
+            });
+          } catch (error) {
+            if ((error as any).code === 'P2002') {
+              // Race condition: another transaction created it, retry
+              return { locked: false, newlyLocked: false, retry: true };
+            }
+            throw error;
+          }
+        }
+
+        // 2. If already locked, return immediately (no increment)
+        if (record.lockedUntil !== null) {
+          return { locked: true, newlyLocked: false, retry: false };
+        }
+
+        // 3. Compute new values
+        const newAttempts = record.attempts + 1;
+        let newlyLocked = false;
+        const updateData: any = { attempts: newAttempts };
+
+        if (newAttempts >= 3) {
+          // Lock the account by setting lockedUntil to a far‑future date
+          const farFuture = new Date(
+            Date.now() + 100 * 365 * 24 * 60 * 60 * 1000,
+          );
+          updateData.lockedUntil = farFuture;
+          updateData.lockCount = (record.lockCount || 0) + 1;
+          newlyLocked = true;
+        }
+
+        // 4. Optimistic update: only if record hasn't changed
+        const updated = await tx.loginAttempt.updateMany({
+          where: {
+            email,
+            attempts: record.attempts, // ensure no other transaction changed it
+            lockedUntil: record.lockedUntil, // ensure still not locked
+          },
+          data: updateData,
+        });
+
+        if (updated.count === 0) {
+          // Record changed by another transaction – retry
+          return { locked: false, newlyLocked: false, retry: true };
+        }
+
+        // 5. Success
+        return {
+          locked: newAttempts >= 3,
+          newlyLocked,
+          retry: false,
+        };
+      });
+
+      if (!result.retry) {
+        return { locked: result.locked, newlyLocked: result.newlyLocked };
+      }
+      // Otherwise loop and retry
+    }
+
+    // If we exhaust retries, fallback to reading the final state
+    const finalRecord = await this.prisma.loginAttempt.findUnique({
+      where: { email },
+    });
+    if (finalRecord?.lockedUntil !== null) {
+      return { locked: true, newlyLocked: false };
+    }
+    // Not locked (should be rare)
+    return { locked: false, newlyLocked: false };
+  }
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.usersService.findByEmail(email);

@@ -8,6 +8,9 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class PasswordResetService {
+  verifyTokenAndGetUserId(token: string) {
+    throw new Error('Method not implemented.');
+  }
   private readonly webUrl: string;
 
   constructor(
@@ -62,7 +65,7 @@ export class PasswordResetService {
     await this.mailService.sendPasswordResetEmail(email, resetUrl);
   }
 
-  async resetPassword(token: string, newPassword: string): Promise<void> {
+  async resetPassword(token: string, newPassword: string): Promise<string> {
     const tokenHash = this.hashToken(token);
     const record = await this.prisma.passwordResetToken.findFirst({
       where: {
@@ -87,11 +90,12 @@ export class PasswordResetService {
         where: { id: record.id },
         data: { usedAt: new Date() },
       }),
-      // Optionally revoke refresh tokens
       this.prisma.refreshToken.updateMany({
         where: { userId: record.userId, revokedAt: null },
         data: { revokedAt: new Date() },
       }),
     ]);
+
+    return record.userId; // <-- return userId to unlock the account
   }
 }
