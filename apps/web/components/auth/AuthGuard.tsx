@@ -23,8 +23,6 @@ import {
 
 
 
-
-
 export default function AuthGuard({
 
   children,
@@ -81,6 +79,16 @@ export default function AuthGuard({
     checking,
     setChecking
   ] = useState(true);
+
+
+  // Separate from `checking` on purpose: `checking` just means "still
+  // validating," but we should never render `children` on any path that
+  // ends in a redirect (no token, fetch failed, unverified email) — only
+  // when the session is confirmed valid AND verified.
+  const [
+    authorized,
+    setAuthorized
+  ] = useState(false);
 
 
 
@@ -153,6 +161,30 @@ export default function AuthGuard({
 
 
 
+        if (!profile.emailVerifiedAt) {
+
+
+
+          router.replace(
+            `/verify-email/sent?email=${encodeURIComponent(profile.email)}`
+          );
+
+
+
+          setChecking(false);
+
+
+
+          return;
+
+        }
+
+
+
+        setAuthorized(true);
+
+
+
       } catch(error) {
 
 
@@ -221,7 +253,9 @@ export default function AuthGuard({
 
     !hydrated ||
 
-    checking
+    checking ||
+
+    !authorized
 
   ) {
 

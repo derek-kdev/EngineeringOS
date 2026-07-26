@@ -1,85 +1,76 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 
 import DashboardTopbar from "./DashboardTopbar";
 import DashboardFooter from "./DashboardFooter";
 import UserPanel from "./panels/UserPanel";
+import BackButton from "./ui/BackButton";
 
 
 type UserPanelType =
-  | "profile"
-  | "preferences"
-  | "security"
-  | "workspace"
-  | null;
+| "profile"
+| "preferences"
+| "security"
+| "workspace"
+| null;
 
 
 
 export default function DashboardShell({
 
-  children,
+children,
 
 }: {
 
-  children: React.ReactNode;
+children: React.ReactNode;
 
 }) {
 
 
-  const [
-    activePanel,
-    setActivePanel
+const [
+activePanel,
+setActivePanel
   ] = useState<UserPanelType>(null);
 
 
+const pathname = usePathname();
 
-  return (
+// Every dashboard page gets a Back button except the dashboard home
+// itself — there's nowhere more "back" than that to go to.
+const showBackButton = pathname !== "/dashboard";
 
-    <div
 
-      className="
+
+return (
+
+<div
+
+className="
         relative
         min-h-screen
         overflow-hidden
         text-white
       "
 
-    >
-
-
-
-      {/* BACKGROUND */}
-
-      <div
-
-        className="
-          absolute
-          inset-0
-          bg-[url('/img/jjjjk.jpg')]
-          bg-cover
-          bg-center
-          blur-[2px]
-          scale-105
-        "
-
-      />
+>
 
 
 
 
 
-      {/* DARK OVERLAY */}
+{/* DARK OVERLAY */}
 
-      <div
+<div
 
-        className="
+className="
           absolute
           inset-0
           bg-black/40
         "
 
-      />
+/>
 
 
 
@@ -87,52 +78,52 @@ export default function DashboardShell({
 
 
 
-      <div
+<div
 
-        className="
+className="
           relative
           z-10
           min-h-screen
         "
 
-      >
+>
 
 
 
 
-        {/* VS CODE STYLE TOP NAVIGATION */}
+{/* VS CODE STYLE TOP NAVIGATION */}
 
-        <DashboardTopbar
+<DashboardTopbar
 
-          onOpenPanel={
-            setActivePanel
-          }
+onOpenPanel={
+setActivePanel
+}
 
-        />
-
-
+/>
 
 
 
 
 
-        {/* USER OVERLAY PANEL */}
 
-        {
-          activePanel && (
 
-            <UserPanel
+{/* USER OVERLAY PANEL */}
 
-              panel={activePanel}
+{
+activePanel && (
 
-              onClose={() =>
-                setActivePanel(null)
-              }
+<UserPanel
 
-            />
+panel={activePanel}
+
+onClose={() =>
+setActivePanel(null)
+}
+
+/>
 
           )
-        }
+}
 
 
 
@@ -141,11 +132,11 @@ export default function DashboardShell({
 
 
 
-        {/* FULL WIDTH WORKSPACE */}
+{/* FULL WIDTH WORKSPACE */}
 
-        <main
+<main
 
-          className="
+className="
             min-h-screen
             w-full
             px-6
@@ -153,28 +144,30 @@ export default function DashboardShell({
             pb-20
           "
 
-        >
+>
 
-          {children}
+{showBackButton && <BackButton />}
 
-        </main>
+{children}
 
-
-
-
+</main>
 
 
 
 
-        <DashboardFooter />
 
 
 
-      </div>
+
+<DashboardFooter />
 
 
 
-    </div>
+</div>
+
+
+
+</div>
 
   );
 
