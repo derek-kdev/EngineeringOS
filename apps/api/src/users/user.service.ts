@@ -92,7 +92,7 @@ export class UsersService {
    * - timezone and locale are updated on the associated UserPreference.
    */
   async update(id: string, dto: UpdateUserDto): Promise<SafeUser> {
-    await this.getUserOrThrow(id);
+    const existingUser = await this.getUserOrThrow(id);
 
     const userUpdateData: Prisma.UserUpdateInput = {};
     if (dto.firstName !== undefined) {
@@ -105,6 +105,26 @@ export class UsersService {
       userUpdateData.avatarUrl = dto.avatarUrl;
     }
 
+    if (Object.keys(userUpdateData).length > 0) {
+      await this.prisma.user.update({
+        where: { id },
+        data: userUpdateData,
+      });
+    }
+
+    if (dto.firstName !== undefined || dto.lastName !== undefined) {
+      const firstName =
+        dto.firstName !== undefined
+          ? dto.firstName.trim()
+          : existingUser.firstName;
+      const lastName =
+        dto.lastName !== undefined
+          ? dto.lastName.trim()
+          : existingUser.lastName;
+      userUpdateData.displayName = `${firstName} ${lastName}`;
+    }
+
+    // Apply user updates if any
     if (Object.keys(userUpdateData).length > 0) {
       await this.prisma.user.update({
         where: { id },
