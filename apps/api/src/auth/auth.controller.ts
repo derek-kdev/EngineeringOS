@@ -30,6 +30,7 @@ import { AuthenticatedUser } from './interfaces/authenticated-user.interface';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UsersService } from '../users/user.service';
 import { UserProfileDto } from '../users/dto/user-profile.dto';
+import { SkipEmailVerification } from '../common/decorators/skip-email-verification.decorator';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -41,6 +42,7 @@ export class AuthController {
 
     // ─── Register New User ────────────────────────────────────────────
   @Post('register')
+  @SkipEmailVerification()
   @ApiOperation({
     summary: 'Register a new user',
     description: 'Creates a new account and returns authentication tokens.',
@@ -69,6 +71,7 @@ export class AuthController {
 
     // ─── User Login ────────────────────────────────────────────
   @Post('login')
+  @SkipEmailVerification()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'User login',
@@ -101,6 +104,7 @@ export class AuthController {
     // ─── Refresh Token ────────────────────────────────────────────
   @Post('refresh')
   @UseGuards(JwtAuthGuard)
+  @SkipEmailVerification()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Refresh authentication tokens',
@@ -122,6 +126,7 @@ export class AuthController {
     // ─── User Profile ────────────────────────────────────────────
   @Get('me')
   @UseGuards(JwtAuthGuard)
+  @SkipEmailVerification()
   @ApiOperation({
     summary: 'Get current user profile',
     description: 'Returns the profile information of the currently authenticated user.',
@@ -144,6 +149,7 @@ export class AuthController {
     // ─── User Logout ────────────────────────────────────────────
   @Post('logout')
   @UseGuards(JwtAuthGuard)
+  @SkipEmailVerification()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Logout user' })
   @ApiResponse({
@@ -161,6 +167,7 @@ export class AuthController {
 
     // ─── Resend Verification Email ────────────────────────────────────────────
   @Post('resend-verification')
+  @SkipEmailVerification()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Resend email verification email' })
   @ApiResponse({ status: 200, description: 'Verification email sent if account exists' })
@@ -171,6 +178,7 @@ export class AuthController {
 
     // ─── Email Verification ────────────────────────────────────────────
   @Post('verify-email')
+  @SkipEmailVerification()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verify email with token' })
   @ApiResponse({ status: 200, description: 'Email verified successfully' })
@@ -182,6 +190,7 @@ export class AuthController {
 
     // ─── Forgot Password ────────────────────────────────────────────
   @Post('forgot-password')
+  @SkipEmailVerification()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Request password reset' })
   @ApiResponse({ status: 200, description: 'Password reset email sent if account exists' })
@@ -192,6 +201,7 @@ export class AuthController {
 
     // ─── Reset Password ────────────────────────────────────────────
   @Patch('reset-password')
+  @SkipEmailVerification()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reset user password' })
   @ApiResponse({ status: 200, description: 'Password reset successfully' })

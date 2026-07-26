@@ -102,7 +102,7 @@ export class AuthService {
 
     // Send verification email if configured
     const globalSendEmail =
-      process.env.SEND_VERIFICATION_EMAIL_ON_REGISTER !== 'false';
+      process.env.SEND_VERIFICATION_EMAIL_ON_REGISTER !== 'true';
     const shouldSend =
       dto.sendVerificationEmail !== undefined
         ? dto.sendVerificationEmail
