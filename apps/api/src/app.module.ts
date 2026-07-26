@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import { MailModule } from './mail/mail.module';
 import { OrganizationModule } from './organizations/organization.module';
 import { TasksModule } from './tasks/tasks.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { TasksModule } from './tasks/tasks.module';
     MailModule,
     OrganizationModule,
     TasksModule,
+    CommonModule,
   ],
   controllers: [AppController],
   providers: [AppService],
