@@ -33,7 +33,7 @@ import { UserProfileDto } from '../users/dto/user-profile.dto';
 import { SkipEmailVerification } from '../common/decorators/skip-email-verification.decorator';
 
 @ApiTags('Authentication')
-@Controller('auth')
+@Controller({ path: 'auth', version: '1' })
 export class AuthController {
   constructor(
     private readonly authService: AuthService,

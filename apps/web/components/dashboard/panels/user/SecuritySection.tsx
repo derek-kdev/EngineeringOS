@@ -25,12 +25,12 @@ export default function SecuritySection() {
       setLoading(true);
       setMessage("");
 
-      const user = JSON.parse(
-        localStorage.getItem("user") || "{}"
-      );
+      const response = await api.get("/auth/me");
+
+      const email = response.data.email;
 
 
-      if (!user.email) {
+      if (!email) {
 
         setMessage(
           "Unable to find account email."
@@ -44,7 +44,7 @@ export default function SecuritySection() {
       await api.post(
         "/auth/forgot-password",
         {
-          email: user.email,
+          email,
         }
       );
 
