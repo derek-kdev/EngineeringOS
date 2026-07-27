@@ -11,6 +11,8 @@ import { MailModule } from './mail/mail.module';
 import { OrganizationModule } from './organizations/organization.module';
 import { TasksModule } from './tasks/tasks.module';
 import { CommonModule } from './common/common.module';
+import { SearchModule } from './search/search.module';
+import { MaterialsModule } from './modules/materials/materials.module';
 
 @Module({
   imports: [
@@ -40,6 +42,8 @@ import { CommonModule } from './common/common.module';
     OrganizationModule,
     TasksModule,
     CommonModule,
+    SearchModule,
+    MaterialsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

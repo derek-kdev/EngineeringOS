@@ -254,35 +254,7 @@ export default function VerifyEmailSentPage() {
 
 
 
-        <Link
-          href="/verify-email"
-          className="
-            mt-4
-            inline-flex
-            items-center
-            justify-center
-            gap-2
-            w-full
-            rounded-xl
-            bg-gradient-to-r
-            from-[#FF6B00]
-            to-[#FF9D00]
-            py-3
-            font-semibold
-            text-black
-          "
-        >
-
-          <ArrowLeft size={18}/>
-
-          Verify another email
-
-        </Link>
-
-
-
-
-
+        
 
         <p
           className="

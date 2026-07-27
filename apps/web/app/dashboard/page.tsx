@@ -59,7 +59,7 @@ export default function DashboardPage() {
 
         case "n":
           event.preventDefault();
-          router.push("/dashboard/projects/new");
+          router.push("/dashboard/projects");
           break;
 
 
@@ -105,10 +105,9 @@ export default function DashboardPage() {
   return (
 
     <div className="
-      fixed
       inset-0
       flex
-      items-center
+      items-start
       justify-center
       bg-[#0B132B]
       p-4
@@ -157,7 +156,7 @@ export default function DashboardPage() {
               className="
                 flex
                 min-w-[320px]
-                items-center
+                items-start
                 justify-between
                 text-white
                 text-base

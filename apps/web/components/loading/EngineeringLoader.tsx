@@ -1,62 +1,91 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import Filament from "./Filament";
+
+import {
+  useEffect,
+  useState,
+} from "react";
 
 
-const loadingImages = [
-  "/img/loading1.jpg",
-  "/img/loading2.jpg",
-  "/img/loading3.jpg",
-  "/img/loading4.jpg",
-  "/img/loading5.jpg",
-  "/img/loading6.jpg",
-  "/img/loading7.png",
-];
+import {
+  motion,
+} from "framer-motion";
 
 
-export default function EngineeringLoader() {
-
-  const [image, setImage] = useState(
-    loadingImages[0]
-  );
-
-
-  useEffect(() => {
-
-    const key = "engineeringos_loader_index";
-
-    const current =
-      Number(
-        localStorage.getItem(key) || "0"
-      );
+import {
+  loaderImages,
+  loaderAnimations,
+  randomItem,
+} from "./loader.config";
 
 
-    const next =
-      current % loadingImages.length;
+import LoaderAnimation from "./LoaderAnimation";
+
+
+
+export default function EngineeringLoader(){
+
+
+  const [image,setImage] =
+    useState<string | null>(null);
+
+
+
+  const [animation,setAnimation] =
+    useState<
+      typeof loaderAnimations[number] | null
+    >(null);
+
+
+
+  useEffect(()=>{
 
 
     setImage(
-      loadingImages[next]
+      randomItem(loaderImages)
     );
 
 
-    localStorage.setItem(
-      key,
-      String(
-        (next + 1) % loadingImages.length
-      )
+    setAnimation(
+      randomItem(loaderAnimations)
     );
 
 
-  }, []);
+  },[]);
+
+
+
+
+  if(
+    !image ||
+    !animation
+  ){
+
+    return (
+
+      <main
+        className="
+          fixed
+          inset-0
+          z-[999]
+          flex
+          items-center
+          justify-center
+          bg-black
+        "
+      />
+
+    );
+
+  }
+
 
 
 
   return (
 
     <main
+
       className="
         fixed
         inset-0
@@ -68,22 +97,40 @@ export default function EngineeringLoader() {
         bg-black
         overflow-hidden
       "
+
     >
 
 
+
       <div
+
         className="
           relative
+          grid
           h-80
           w-80
-          flex
-          items-center
-          justify-center
+          place-items-center
         "
+
       >
 
 
-        <Filament />
+
+        <div
+          className="
+            grid
+            place-items-center
+            [grid-area:1/1]
+          "
+        >
+
+          <LoaderAnimation
+            type={animation}
+          />
+
+        </div>
+
+
 
 
         <motion.img
@@ -92,8 +139,9 @@ export default function EngineeringLoader() {
 
           alt="EngineeringOS Loading"
 
+
           className="
-            relative
+            [grid-area:1/1]
             z-10
             h-44
             w-44
@@ -128,7 +176,10 @@ export default function EngineeringLoader() {
         />
 
 
+
       </div>
+
+
 
 
 
@@ -142,6 +193,7 @@ export default function EngineeringLoader() {
           text-white
         "
 
+
         animate={{
 
           opacity:[
@@ -151,6 +203,7 @@ export default function EngineeringLoader() {
           ]
 
         }}
+
 
         transition={{
 
@@ -168,6 +221,9 @@ export default function EngineeringLoader() {
 
 
 
+
+
+
       <motion.p
 
         className="
@@ -176,6 +232,7 @@ export default function EngineeringLoader() {
           tracking-wide
           text-white/40
         "
+
 
         animate={{
 
@@ -186,6 +243,7 @@ export default function EngineeringLoader() {
           ]
 
         }}
+
 
         transition={{
 
@@ -200,6 +258,7 @@ export default function EngineeringLoader() {
         Building engineering intelligence...
 
       </motion.p>
+
 
 
     </main>

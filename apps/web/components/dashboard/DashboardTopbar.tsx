@@ -300,7 +300,7 @@ export default function DashboardTopbar({
 <header
 
 className="
-fixed
+sticky
 top-0
 left-0
 right-0
@@ -319,7 +319,9 @@ text-white
 
 >
 
-<div
+<Link
+
+href="/dashboard"
 
 className="
 flex
@@ -327,6 +329,8 @@ items-center
 gap-2
 text-xs
 font-semibold
+hover:opacity-80
+transition
 "
 
 >
@@ -373,11 +377,7 @@ object-cover
 EngineeringOS
 
 
-</div>
-
-
-
-
+</Link>
 
 
 

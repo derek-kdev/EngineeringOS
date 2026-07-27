@@ -6,7 +6,6 @@ import DashboardTopbar from "./DashboardTopbar";
 import DashboardFooter from "./DashboardFooter";
 import UserPanel from "./panels/UserPanel";
 import BackButton from "./ui/BackButton";
-import PageTransition from "./transitions/PageTransition";
 type UserPanelType =
   | "profile"
   | "preferences"
@@ -78,49 +77,16 @@ export default function DashboardShell({
               <BackButton />
             )
           }
-          
-
-
-<motion.div
-
-  key={pathname}
-
-  initial={{
-    opacity:0,
-    y:20,
-    scale:0.98,
-    filter:"blur(8px)"
-  }}
-
-  animate={{
-    opacity:1,
-    y:0,
-    scale:1,
-    filter:"blur(0px)"
-  }}
-
-  transition={{
-    duration:0.55,
-    ease:[
-      0.22,
-      1,
-      0.36,
-      1
-    ]
-  }}
-
->
-
-<PageTransition>
-{children}
-</PageTransition>
-
-</motion.div>
-
-
-
+          {children}
         </main>
-        <DashboardFooter />
+        <motion.div
+          initial={{ opacity: 0, y: 28 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <DashboardFooter />
+        </motion.div>
       </div>
     </div>
   );

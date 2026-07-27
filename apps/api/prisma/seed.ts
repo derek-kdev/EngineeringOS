@@ -4,6 +4,9 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import * as argon2 from 'argon2';
 import * as crypto from 'crypto';
+import materialsData from './seeds/materials.json';
+
+const materials = materialsData.materials;
 
 // Create a PostgreSQL connection pool
 const pool = new Pool({
@@ -48,6 +51,7 @@ async function main() {
         timezone: 'UTC',
         emailVerifiedAt: new Date(),
         isActive: true,
+        updatedAt: new Date(),
       },
       create: {
         email,
@@ -60,6 +64,7 @@ async function main() {
         timezone: 'UTC',
         emailVerifiedAt: new Date(),
         isActive: true,
+        updatedAt: new Date(),
       },
     });
     adminUsers.push(user);
@@ -94,6 +99,7 @@ async function main() {
         pushNotifications: true,
         inAppNotifications: true,
         dashboardLayout: { sidebarCollapsed: false, widgets: [] },
+        updatedAt: new Date(),
       },
     });
     console.log(`Preferences for ${user.email} created/updated`);
@@ -111,6 +117,7 @@ async function main() {
     size: 'SMALL',
     metadata: { type: 'demo' },
     ownerId: adminUsers[0].id,
+    updatedAt: new Date(),
   };
 
   const organization = await prisma.organization.upsert({
@@ -143,6 +150,7 @@ async function main() {
       weekStartsOn: 1,
       allowGuestAccess: false,
       metadata: {},
+      updatedAt: new Date(),
     },
   });
   console.log(
@@ -171,6 +179,7 @@ async function main() {
         role: 'OWNER',
         status: 'ACTIVE',
         joinedAt: new Date(),
+        updatedAt: new Date(),
       },
     });
     console.log(
@@ -217,6 +226,7 @@ async function main() {
         prefix,
         keyHash,
         scopes: ['platform:*'],
+        updatedAt: new Date(),
       },
     });
   }
@@ -246,6 +256,7 @@ async function main() {
         title: notificationTitle,
         message:
           'Your EngineeringOS workspace has been successfully initialized.',
+        updatedAt: new Date(),
       },
     });
     console.log(`Welcome notification created for ${adminUsers[0].email}`);
@@ -253,10 +264,64 @@ async function main() {
     console.log(`Welcome notification already exists, skipping.`);
   }
 
+
+  // ------------------------------------------------------------------------
+  // 8. Engineering Materials Database
+  // ------------------------------------------------------------------------
+
+  console.log(`\nLoading ${materials.length} engineering materials...`);
+
+  await prisma.material.createMany({
+    data: materials.map((material) => ({
+      ...material,
+      applications: material.applications,
+    })),
+    skipDuplicates: true,
+  });
+
+  console.log('Materials inserted successfully');
+
+
+  // ------------------------------------------------------------------------
+  // 9. Global Search Index for Materials
+  // ------------------------------------------------------------------------
+
+  console.log('Creating material search indexes...');
+
+  const searchRecords = materials.map((material) => ({
+    entityType: 'MATERIAL',
+    entityId: material.id,
+    title: material.name,
+    description: material.description,
+    visibility: 'GLOBAL',
+    metadata: {
+      category: material.category,
+      subcategory: material.subcategory,
+      symbol: material.symbol,
+      properties: {
+        density: material.density,
+        youngsModulus: material.youngsModulus,
+        yieldStrength: material.yieldStrength,
+        ultimateStrength: material.ultimateStrength,
+        thermalConductivity: material.thermalConductivity,
+        electricalConductivity: material.electricalConductivity,
+        meltingPoint: material.meltingPoint,
+      },
+    },
+  }));
+
+  await prisma.searchIndex.createMany({
+    data: searchRecords,
+    skipDuplicates: true,
+  });
+
+  console.log('Material search indexing completed');
+
   // ------------------------------------------------------------------------
   // Done
   // ------------------------------------------------------------------------
   console.log('\n Seed completed successfully.');
+
 }
 
 // --------------------------------------------------------------------------

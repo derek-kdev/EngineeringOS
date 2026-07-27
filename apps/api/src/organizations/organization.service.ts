@@ -19,9 +19,16 @@ import * as crypto from 'crypto';
 import { generateSlug } from './utils/slug.utils';
 import { RoleHierarchy } from './constants/roles';
 
+import {
+  SearchIndexService,
+} from '../search/search-index.service';
+
 @Injectable()
 export class OrganizationService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly searchIndexService: SearchIndexService,
+) {}
 
   // -------------------------------------------------------------------------
   // Organization Onboarding
@@ -77,7 +84,21 @@ export class OrganizationService {
       },
     });
 
-    return organization;
+    await this.searchIndexService.index({
+      entityType: 'ORGANIZATION',
+      entityId: organization.id,
+      title: organization.name,
+      description: organization.description ?? '',
+      visibility: 'GLOBAL',
+      metadata: {
+        industry: organization.industry,
+        size: organization.size,
+        slug: organization.slug,
+      },
+    });
+
+
+return organization;
   }
 
   async listUserOrganizations(userId: string) {

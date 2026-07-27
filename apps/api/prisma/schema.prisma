@@ -2,18 +2,362 @@ generator client {
   provider = "prisma-client-js"
 }
 
+/// *
+///    * url = env("postgresql://engineeringos:password@localhost:5432/engineeringos?schema=public")
 datasource db {
   provider = "postgresql"
-  /**
-   * url = env("postgresql://engineeringos:password@localhost:5432/engineeringos?schema=public")
-   */
 }
 
-/**
- * |--------------------------------------------------------------------------
- * | Enums
- * |--------------------------------------------------------------------------
- */
+model User {
+  id                  String                   @id @default(cuid())
+  email               String                   @unique
+  passwordHash        String
+  firstName           String
+  lastName            String
+  displayName         String?
+  avatarUrl           String?
+  phone               String?
+  jobTitle            String?
+  locale              Language                 @default(EN)
+  timezone            String                   @default("UTC")
+  isActive            Boolean                  @default(true)
+  lastLoginAt         DateTime?
+  emailVerifiedAt     DateTime?
+  createdAt           DateTime                 @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt           DateTime?
+  role                Role                     @default(USER)
+  accountUnlockTokens AccountUnlockToken[]
+  createdApiKeys      ApiKey[]                 @relation("ApiKeyCreator")
+  auditLogs           AuditLog[]
+  verificationTokens  EmailVerificationToken[]
+  createdTasks        EngineeringTask[]
+  invitations         Invitation[]
+  memberships         Membership[]
+  notifications       Notification[]
+  ownedOrganizations  Organization[]           @relation("OrganizationOwner")
+  passwordResetTokens PasswordResetToken[]
+  refreshTokens       RefreshToken[]
+  sessions            Session[]
+  preferences         UserPreference?
+
+  @@index([email])
+  @@index([createdAt])
+}
+
+model Session {
+  id        String    @id @default(cuid())
+  userId    String
+  ipAddress String?
+  userAgent String?
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model UserPreference {
+  id                 String     @id @default(cuid())
+  userId             String     @unique
+  theme              Theme      @default(SYSTEM)
+  language           Language   @default(EN)
+  timezone           String     @default("UTC")
+  dateFormat         DateFormat @default(YYYY_MM_DD)
+  timeFormat         TimeFormat @default(TWENTY_FOUR_HOUR)
+  emailNotifications Boolean    @default(true)
+  pushNotifications  Boolean    @default(true)
+  inAppNotifications Boolean    @default(true)
+  dashboardLayout    Json?
+  createdAt          DateTime   @default(now())
+  updatedAt DateTime @updatedAt
+  user               User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Organization {
+  id            String                @id @default(cuid())
+  ownerId       String
+  name          String
+  slug          String                @unique
+  logoUrl       String?
+  description   String?
+  industry      String?
+  website       String?
+  size          String?
+  metadata      Json?
+  createdAt     DateTime              @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt     DateTime?
+  apiKeys       ApiKey[]
+  auditLogs     AuditLog[]
+  tasks         EngineeringTask[]
+  invitations   Invitation[]
+  memberships   Membership[]
+  notifications Notification[]
+  owner         User                  @relation("OrganizationOwner", fields: [ownerId], references: [id])
+  settings      OrganizationSettings?
+
+  @@index([slug])
+  @@index([ownerId])
+  @@index([createdAt])
+}
+
+model OrganizationSettings {
+  id               String           @id @default(cuid())
+  organizationId   String           @unique
+  timezone         String           @default("UTC")
+  currency         String           @default("USD")
+  defaultRole      OrganizationRole @default(MEMBER)
+  dateFormat       DateFormat       @default(YYYY_MM_DD)
+  timeFormat       TimeFormat       @default(TWENTY_FOUR_HOUR)
+  weekStartsOn     Int              @default(1)
+  allowGuestAccess Boolean          @default(false)
+  metadata         Json?
+  createdAt        DateTime         @default(now())
+  updatedAt DateTime @updatedAt
+  organization     Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model Membership {
+  id             String            @id @default(cuid())
+  organizationId String
+  userId         String
+  role           OrganizationRole  @default(MEMBER)
+  status         MembershipStatus  @default(INVITED)
+  joinedAt       DateTime?
+  removedAt      DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt DateTime @updatedAt
+  assignedTasks  EngineeringTask[]
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
+  @@index([status])
+}
+
+model Invitation {
+  id             String           @id @default(cuid())
+  organizationId String
+  invitedById    String
+  email          String
+  role           OrganizationRole
+  status         InvitationStatus @default(PENDING)
+  tokenHash      String           @unique
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  cancelledAt    DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt DateTime @updatedAt
+  invitedBy      User             @relation(fields: [invitedById], references: [id])
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([email])
+  @@index([expiresAt])
+}
+
+model ApiKey {
+  id             String       @id @default(cuid())
+  organizationId String
+  createdById    String
+  name           String
+  description    String?
+  prefix         String
+  keyHash        String       @unique
+  scopes         Json?
+  lastUsedAt     DateTime?
+  expiresAt      DateTime?
+  revokedAt      DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy      User         @relation("ApiKeyCreator", fields: [createdById], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+}
+
+model Notification {
+  id             String           @id @default(cuid())
+  organizationId String?
+  userId         String
+  type           NotificationType
+  title          String
+  message        String
+  actionUrl      String?
+  readAt         DateTime?
+  dismissedAt    DateTime?
+  archivedAt     DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt DateTime @updatedAt
+  organization   Organization?    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([readAt])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String?
+  action         String
+  entity         String
+  entityId       String
+  oldValues      Json?
+  newValues      Json?
+  metadata       Json?
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime     @default(now())
+  updatedAt DateTime @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User?        @relation(fields: [userId], references: [id])
+
+  @@index([organizationId, createdAt])
+  @@index([entity, entityId])
+  @@index([userId])
+}
+
+/// *
+///  * |--------------------------------------------------------------------------
+///  * | Rate Limiting
+///  * |--------------------------------------------------------------------------
+model LoginAttempt {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  attempts    Int       @default(0)
+  lockedUntil DateTime?
+  lockCount   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([email])
+  @@index([lockedUntil])
+}
+
+model AccountUnlockToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model EngineeringTask {
+  id             String       @id @default(cuid())
+  organizationId String
+  assignedToId   String?
+  createdById    String
+  title          String
+  description    String?
+  taskType       TaskType     @default(GENERAL)
+  status         TaskStatus   @default(PENDING)
+  dueDate        DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt DateTime @updatedAt
+  assignedTo     Membership?  @relation(fields: [assignedToId], references: [id])
+  createdBy      User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([assignedToId])
+  @@index([status])
+}
+
+model SearchIndex {
+  id             String                   @id @default(cuid())
+  /// *
+  ///    * What type of object this represents.
+  ///    * Examples:
+  ///    * USER
+  ///    * PROJECT
+  ///    * SIMULATION
+  ///    * MATERIAL
+  ///    * FORMULA
+  ///    * TASK
+  ///    * DOCUMENT
+  entityType     String
+  entityId       String
+  /// *
+  ///    * Organisation isolation.
+  ///    * Null means globally reusable content.
+  organizationId String?
+  title          String
+  description    String?
+  /// *
+  ///    * Security scope:
+  ///    * GLOBAL  -> reusable engineering knowledge
+  ///    * PRIVATE -> user only
+  ///    * ORG     -> organisation/community only
+  visibility     String                   @default("ORG")
+  metadata       Json?
+  search_vector  Unsupported("tsvector")?
+
+  @@unique([entityType, entityId])
+  @@index([entityType, entityId], map: "search_index_entity_idx")
+  @@index([organizationId], map: "search_index_org_idx")
+  @@index([search_vector], map: "search_index_vector_idx", type: Gin)
+  @@index([visibility], map: "search_index_visibility_idx")
+}
 
 enum Role {
   USER
@@ -32,7 +376,7 @@ enum MembershipStatus {
   ACTIVE
   SUSPENDED
   REMOVED
-} 
+}
 
 enum InvitationStatus {
   PENDING
@@ -71,547 +415,80 @@ enum TimeFormat {
   TWENTY_FOUR_HOUR
 }
 
-/**
- * |--------------------------------------------------------------------------
- * | Identity Domain
- * |--------------------------------------------------------------------------
- */
-
-model User {
-  id String @id @default(cuid())
-
-  email        String @unique
-  passwordHash String
-
-  firstName   String
-  lastName    String
-  displayName String?
-
-  role Role @default(USER)
-
-  avatarUrl String?
-  phone     String?
-  jobTitle  String?
-
-  locale   Language @default(EN)
-  timezone String   @default("UTC")
-
-  isActive Boolean @default(true)
-
-  lastLoginAt     DateTime?
-  emailVerifiedAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  deletedAt DateTime?
-
-  memberships Membership[]
-
-  ownedOrganizations Organization[] @relation("OrganizationOwner")
-
-  sessions      Session[]
-  refreshTokens RefreshToken[]
-
-  passwordResetTokens PasswordResetToken[]
-  verificationTokens  EmailVerificationToken[]
-
-  preferences UserPreference?
-
-  notifications Notification[]
-
-  auditLogs AuditLog[]
-
-  accountUnlockTokens AccountUnlockToken[]
-
-  createdTasks EngineeringTask[]
-
-  createdApiKeys ApiKey[]     @relation("ApiKeyCreator")
-  invitations    Invitation[]
-
-  @@index([email])
-  @@index([createdAt])
-}
-
-model Session {
-  id String @id @default(cuid())
-
-  userId String
-
-  ipAddress String?
-  userAgent String?
-
-  expiresAt DateTime
-  revokedAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([expiresAt])
-  @@index([revokedAt])
-}
-
-model RefreshToken {
-  id String @id @default(cuid())
-
-  userId String
-
-  tokenHash String @unique
-
-  expiresAt DateTime
-  revokedAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([expiresAt])
-  @@index([revokedAt])
-}
-
-model PasswordResetToken {
-  id String @id @default(cuid())
-
-  userId String
-
-  tokenHash String @unique
-
-  expiresAt DateTime
-
-  usedAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([expiresAt])
-}
-
-model EmailVerificationToken {
-  id String @id @default(cuid())
-
-  userId String
-
-  tokenHash String @unique
-
-  expiresAt DateTime
-
-  usedAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([expiresAt])
-}
-
-/**
- * |--------------------------------------------------------------------------
- * | User Preferences
- * |--------------------------------------------------------------------------
- */
-
-model UserPreference {
-  id String @id @default(cuid())
-
-  userId String @unique
-
-  theme Theme @default(SYSTEM)
-
-  language Language @default(EN)
-
-  timezone String @default("UTC")
-
-  dateFormat DateFormat @default(YYYY_MM_DD)
-
-  timeFormat TimeFormat @default(TWENTY_FOUR_HOUR)
-
-  emailNotifications Boolean @default(true)
-  pushNotifications  Boolean @default(true)
-  inAppNotifications Boolean @default(true)
-
-  dashboardLayout Json?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-/**
- * |--------------------------------------------------------------------------
- * | Multi Tenancy Domain
- * |--------------------------------------------------------------------------
- */
-
-model Organization {
-  id String @id @default(cuid())
-
-  ownerId String
-
-  name String
-
-  slug String @unique
-
-  logoUrl String?
-
-  description String?
-
-  industry String?
-
-  website String?
-
-  size String?
-
-  metadata Json?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  deletedAt DateTime?
-
-  owner User @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: Restrict)
-
-  memberships Membership[]
-
-  settings OrganizationSettings?
-
-  invitations Invitation[]
-
-  apiKeys ApiKey[]
-
-  notifications Notification[]
-
-  auditLogs AuditLog[]
-
-  tasks EngineeringTask[]
-
-  @@index([slug])
-  @@index([ownerId])
-  @@index([createdAt])
-}
-
-model OrganizationSettings {
-  id String @id @default(cuid())
-
-  organizationId String @unique
-
-  timezone String @default("UTC")
-
-  currency String @default("USD")
-
-  defaultRole OrganizationRole @default(MEMBER)
-
-  dateFormat DateFormat @default(YYYY_MM_DD)
-
-  timeFormat TimeFormat @default(TWENTY_FOUR_HOUR)
-
-  weekStartsOn Int @default(1)
-
-  allowGuestAccess Boolean @default(false)
-
-  metadata Json?
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-}
-
-model Membership {
-  id String @id @default(cuid())
-
-  organizationId String
-
-  userId String
-
-  role OrganizationRole @default(MEMBER)
-
-  status MembershipStatus @default(INVITED)
-
-  joinedAt DateTime?
-
-  removedAt DateTime?
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  assignedTasks EngineeringTask[]
-
-  @@unique([organizationId, userId])
-  @@index([organizationId])
-  @@index([userId])
-  @@index([status])
-}
-
-model Invitation {
-  id String @id @default(cuid())
-
-  organizationId String
-
-  invitedById String
-
-  email String
-
-  role OrganizationRole
-
-  status InvitationStatus @default(PENDING)
-
-  tokenHash String @unique
-
-  expiresAt DateTime
-
-  acceptedAt DateTime?
-
-  cancelledAt DateTime?
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  invitedBy User @relation(fields: [invitedById], references: [id], onDelete: Restrict)
-
-  @@index([organizationId])
-  @@index([email])
-  @@index([expiresAt])
-}
-
-/**
- * |--------------------------------------------------------------------------
- * | Platform Services
- * |--------------------------------------------------------------------------
- */
-
-model ApiKey {
-  id String @id @default(cuid())
-
-  organizationId String
-
-  createdById String
-
-  name String
-
-  description String?
-
-  prefix String
-
-  keyHash String @unique
-
-  scopes Json?
-
-  lastUsedAt DateTime?
-
-  expiresAt DateTime?
-
-  revokedAt DateTime?
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  createdBy User @relation("ApiKeyCreator", fields: [createdById], references: [id], onDelete: Restrict)
-
-  @@index([organizationId])
-  @@index([expiresAt])
-  @@index([revokedAt])
-}
-
-model Notification {
-  id String @id @default(cuid())
-
-  organizationId String?
-
-  userId String
-
-  type NotificationType
-
-  title String
-
-  message String
-
-  actionUrl String?
-
-  readAt DateTime?
-
-  dismissedAt DateTime?
-
-  archivedAt DateTime?
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([organizationId])
-  @@index([readAt])
-  @@index([createdAt])
-}
-
-model AuditLog {
-  id String @id @default(cuid())
-
-  organizationId String
-
-  userId String?
-
-  action String
-
-  entity String
-
-  entityId String
-
-  oldValues Json?
-
-  newValues Json?
-
-  metadata Json?
-
-  ipAddress String?
-
-  userAgent String?
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@index([organizationId, createdAt])
-  @@index([entity, entityId])
-  @@index([userId])
-}
-
-/**
- * |--------------------------------------------------------------------------
- * | Rate Limiting
- * |--------------------------------------------------------------------------
- */
-model LoginAttempt {
-  id          String    @id @default(cuid())
-  email       String    @unique
-  attempts    Int       @default(0)
-  lockedUntil DateTime?
-  lockCount   Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  @@index([email])
-  @@index([lockedUntil])
-}
-
-model AccountUnlockToken {
-  id        String    @id @default(cuid())
-  userId    String
-  tokenHash String    @unique
-  expiresAt DateTime
-  usedAt    DateTime?
-  createdAt DateTime  @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([expiresAt])
-}
-
-model EngineeringTask {
-
-  id String @id @default(cuid())
-
-  organizationId String
-
-  assignedToId String?
-
-  createdById String
-
-
-  title String
-
-  description String?
-
-
-  taskType TaskType @default(GENERAL)
-
-  status TaskStatus @default(PENDING)
-
-
-  dueDate DateTime?
-
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  assignedTo Membership? @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
-
-  createdBy User @relation(fields: [createdById], references: [id], onDelete: Cascade)
-
-
-
-  @@index([organizationId])
-
-  @@index([assignedToId])
-
-  @@index([status])
-
-}
-
-
-
 enum TaskStatus {
-
   PENDING
-
   IN_PROGRESS
-
   COMPLETED
-
   CANCELLED
-
 }
-
-
 
 enum TaskType {
-
   GENERAL
-
   CALCULATION
-
   SIMULATION
-
   CAD
-
   RESEARCH
-
   REVIEW
+}
 
+model Material {
+  id String @id
+
+  name String
+
+  category String
+
+  subcategory String
+
+  symbol String?
+
+  density Float
+
+  youngsModulus Float
+
+  yieldStrength Float
+
+  ultimateStrength Float
+
+  thermalConductivity Float
+
+  electricalConductivity Float
+
+  thermalExpansion Float
+
+  specificHeat Float
+
+  meltingPoint Float
+
+  maxOperatingTemp Float
+
+  resistivity Float
+
+  dielectricStrength Float?
+
+  hardness Float?
+
+  color String
+
+  isStretchable Boolean @default(false)
+
+  isConductive Boolean @default(false)
+
+  isInsulating Boolean @default(false)
+
+  isMagnetic Boolean @default(false)
+
+  isTransparent Boolean @default(false)
+
+  isBiodegradable Boolean @default(false)
+
+  imageUrl String?
+
+  description String
+
+  applications Json
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
 }

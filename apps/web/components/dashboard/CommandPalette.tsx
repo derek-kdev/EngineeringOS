@@ -7,32 +7,17 @@ import {
 
 import {
   Search,
-  User,
-  Settings,
-  LayoutDashboard,
   X,
-  ArrowRight,
 } from "lucide-react";
 
 import {
   useRouter,
 } from "next/navigation";
 
-
-
-interface CommandItem {
-
-  title:string;
-
-  description:string;
-
-  icon:React.ReactNode;
-
-  action:()=>void;
-
-}
-
-
+import {
+  globalSearch,
+  SearchResult,
+} from "@/services/search/search.service";
 
 
 
@@ -46,8 +31,6 @@ interface CommandPaletteProps {
 
 
 
-
-
 export default function CommandPalette({
 
   open,
@@ -57,107 +40,27 @@ export default function CommandPalette({
 }:CommandPaletteProps){
 
 
-
-const router =
-useRouter();
+const router = useRouter();
 
 
-
-const [query,setQuery] =
-useState("");
-
+const [
+  query,
+  setQuery
+] = useState("");
 
 
 
+const [
+  results,
+  setResults
+] = useState<SearchResult[]>([]);
 
 
 
-const commands:CommandItem[] = [
-
-
-{
-
-title:"Dashboard",
-
-description:"Open workspace dashboard",
-
-icon:
-<LayoutDashboard size={18}/>,
-
-action(){
-
-router.push("/dashboard");
-
-onClose();
-
-}
-
-},
-
-
-
-{
-
-title:"Profile",
-
-description:"Manage your account profile",
-
-icon:
-<User size={18}/>,
-
-action(){
-
-router.push("/dashboard/profile");
-
-onClose();
-
-}
-
-},
-
-
-
-{
-
-title:"Settings",
-
-description:"Open workspace settings",
-
-icon:
-<Settings size={18}/>,
-
-action(){
-
-router.push("/dashboard/settings");
-
-onClose();
-
-}
-
-},
-
-
-];
-
-
-
-
-
-
-
-const filtered =
-commands.filter((item)=>
-
-item.title
-.toLowerCase()
-.includes(
-query.toLowerCase()
-)
-
-);
-
-
-
+const [
+  loading,
+  setLoading
+] = useState(false);
 
 
 
@@ -179,7 +82,6 @@ onClose();
 
 
 }
-
 
 
 window.addEventListener(
@@ -208,6 +110,73 @@ onClose
 
 
 
+useEffect(()=>{
+
+
+if(!query.trim()){
+
+setResults([]);
+
+return;
+
+}
+
+
+
+const timer =
+setTimeout(async()=>{
+
+
+try{
+
+
+setLoading(true);
+
+
+const data =
+await globalSearch(query);
+
+
+setResults(
+data.results
+);
+
+
+}
+catch(error){
+
+
+console.error(
+"Search failed",
+error
+);
+
+
+setResults([]);
+
+
+}
+finally{
+
+setLoading(false);
+
+}
+
+
+},400);
+
+
+
+return()=>clearTimeout(timer);
+
+
+},[
+query
+]);
+
+
+
+
 
 
 
@@ -216,6 +185,7 @@ if(!open){
 return null;
 
 }
+
 
 
 
@@ -243,7 +213,6 @@ onClick={onClose}
 >
 
 
-
 <div
 
 className="
@@ -262,9 +231,6 @@ onClick={
 }
 
 >
-
-
-
 
 
 <div
@@ -288,6 +254,7 @@ className="text-[#00D2FF]"
 />
 
 
+
 <input
 
 autoFocus
@@ -302,7 +269,7 @@ e.target.value
 }
 
 placeholder="
-Search commands...
+Search EngineeringOS...
 "
 
 className="
@@ -316,7 +283,6 @@ text-sm
 
 
 
-
 <button
 onClick={onClose}
 >
@@ -326,41 +292,37 @@ onClick={onClose}
 </button>
 
 
-
 </div>
 
 
 
 
 
-
-
-
-
 <div
+
 className="
 p-3
 space-y-2
+max-h-96
+overflow-y-auto
 "
+
 >
 
 
-
 {
-filtered.length===0
+loading
 ?
 
-<div
-className="
+<div className="
 px-4
 py-8
 text-center
 text-sm
 text-white/40
-"
->
+">
 
-No commands found
+Searching...
 
 </div>
 
@@ -368,22 +330,53 @@ No commands found
 :
 
 
-filtered.map(
+results.length===0 && query
+
+?
+
+<div className="
+px-4
+py-8
+text-center
+text-sm
+text-white/40
+">
+
+No results found
+
+</div>
+
+
+:
+
+
+results.map(
 (item)=>(
 
 
 <button
 
-key={item.title}
+key={item.id}
 
-onClick={
-item.action
+onClick={()=>{
+
+
+if(item.href){
+
+router.push(item.href);
+
 }
+
+
+onClose();
+
+
+}}
 
 className="
 w-full
 flex
-items-center
+items-start
 gap-4
 rounded-xl
 px-4
@@ -394,19 +387,6 @@ transition
 "
 
 >
-
-
-<div
-className="
-text-[#00D2FF]
-"
->
-
-{item.icon}
-
-</div>
-
-
 
 
 <div className="flex-1">
@@ -429,17 +409,19 @@ text-white/40
 </p>
 
 
+<span className="
+text-[10px]
+uppercase
+tracking-wider
+text-[#00D2FF]
+">
+
+{item.category}
+
+</span>
+
+
 </div>
-
-
-
-<ArrowRight
-size={16}
-className="
-text-white/30
-"
-/>
-
 
 
 </button>
@@ -449,6 +431,7 @@ text-white/30
 
 )
 
+
 }
 
 
@@ -456,9 +439,7 @@ text-white/30
 </div>
 
 
-
 </div>
-
 
 
 </div>
