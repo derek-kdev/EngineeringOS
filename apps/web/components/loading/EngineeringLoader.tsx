@@ -1,91 +1,15 @@
 "use client";
 
-
-import {
-  useEffect,
-  useState,
-} from "react";
-
-
-import {
-  motion,
-} from "framer-motion";
-
-
-import {
-  loaderImages,
-  loaderAnimations,
-  randomItem,
-} from "./loader.config";
-
+import { motion } from "framer-motion";
 
 import LoaderAnimation from "./LoaderAnimation";
 
 
-
 export default function EngineeringLoader(){
-
-
-  const [image,setImage] =
-    useState<string | null>(null);
-
-
-
-  const [animation,setAnimation] =
-    useState<
-      typeof loaderAnimations[number] | null
-    >(null);
-
-
-
-  useEffect(()=>{
-
-
-    setImage(
-      randomItem(loaderImages)
-    );
-
-
-    setAnimation(
-      randomItem(loaderAnimations)
-    );
-
-
-  },[]);
-
-
-
-
-  if(
-    !image ||
-    !animation
-  ){
-
-    return (
-
-      <main
-        className="
-          fixed
-          inset-0
-          z-[999]
-          flex
-          items-center
-          justify-center
-          bg-black
-        "
-      />
-
-    );
-
-  }
-
-
-
 
   return (
 
     <main
-
       className="
         fixed
         inset-0
@@ -97,13 +21,9 @@ export default function EngineeringLoader(){
         bg-black
         overflow-hidden
       "
-
     >
 
-
-
       <div
-
         className="
           relative
           grid
@@ -111,9 +31,7 @@ export default function EngineeringLoader(){
           w-80
           place-items-center
         "
-
       >
-
 
 
         <div
@@ -125,17 +43,16 @@ export default function EngineeringLoader(){
         >
 
           <LoaderAnimation
-            type={animation}
+            type="rotate"
           />
 
         </div>
 
 
 
-
         <motion.img
 
-          src={image}
+          src="/img/loading2.jpg"
 
           alt="EngineeringOS Loading"
 
@@ -176,9 +93,7 @@ export default function EngineeringLoader(){
         />
 
 
-
       </div>
-
 
 
 
@@ -222,8 +137,6 @@ export default function EngineeringLoader(){
 
 
 
-
-
       <motion.p
 
         className="
@@ -233,21 +146,19 @@ export default function EngineeringLoader(){
           text-white/40
         "
 
-
         animate={{
 
           opacity:[
             0.3,
-            0.8,
+            1,
             0.3
           ]
 
         }}
 
-
         transition={{
 
-          duration:3,
+          duration:2,
 
           repeat:Infinity
 
@@ -255,10 +166,9 @@ export default function EngineeringLoader(){
 
       >
 
-        Building engineering intelligence...
+        INITIALISING ENGINEERING ENVIRONMENT
 
       </motion.p>
-
 
 
     </main>

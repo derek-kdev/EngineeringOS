@@ -18,125 +18,153 @@ export default function NavigationLoader({
 
   children,
 
-}:{
+}: {
 
   children: React.ReactNode;
 
 }) {
 
 
-const pathname =
-usePathname();
+  const pathname =
+    usePathname();
 
 
-const [
-loading,
-setLoading
-] = useState(false);
+  const [
+    loading,
+    setLoading,
+  ] = useState(false);
 
 
+  /*
+   * When Next.js completes client-side navigation,
+   * pathname changes. Reset the navigation loader
+   * asynchronously after the navigation render.
+   */
+  useEffect(() => {
 
-useEffect(()=>{
+    const timer =
+      window.setTimeout(() => {
 
+        setLoading(false);
 
-setLoading(false);
-
-
-},[
-pathname
-]);
-
-
-
-
-
-useEffect(()=>{
+      }, 0);
 
 
-function handleClick(
-event:MouseEvent
-){
+    return () => {
+
+      window.clearTimeout(timer);
+
+    };
+
+  }, [
+    pathname,
+  ]);
 
 
-const target =
-event.target as HTMLElement;
+  /*
+   * Detect internal navigation clicks.
+   */
+  useEffect(() => {
 
 
-const link =
-target.closest("a");
+    function handleClick(
+      event: MouseEvent
+    ) {
 
 
-
-if(!link)
-return;
-
+      const target =
+        event.target as HTMLElement;
 
 
-const href =
-link.getAttribute("href");
+      const link =
+        target.closest("a");
 
 
-
-if(
-!href ||
-href.startsWith("#") ||
-href.startsWith("http") ||
-href === pathname
-)
-return;
+      if (!link) {
+        return;
+      }
 
 
-
-setLoading(true);
-
-
-
-}
+      const href =
+        link.getAttribute("href");
 
 
-
-document.addEventListener(
-"click",
-handleClick
-);
+      if (!href) {
+        return;
+      }
 
 
+      /*
+       * Ignore:
+       * - hash links
+       * - external links
+       * - mail links
+       * - telephone links
+       * - links to the current page
+       */
+      if (
+        href.startsWith("#") ||
+        href.startsWith("http") ||
+        href.startsWith("mailto:") ||
+        href.startsWith("tel:") ||
+        href === pathname
+      ) {
 
-return ()=>{
-
-document.removeEventListener(
-"click",
-handleClick
-);
-
-};
-
-
-},[
-pathname
-]);
-
-
-
-
-
-
-return (
-
-<>
-
-{
-loading &&
-<EngineeringLoader/>
-}
+        return;
+      }
 
 
-{children}
+      /*
+       * Only show the loader for internal
+       * application navigation.
+       */
+      if (
+        href.startsWith("/")
+      ) {
+
+        setLoading(true);
+
+      }
+
+    }
 
 
-</>
+    document.addEventListener(
+      "click",
+      handleClick
+    );
 
-);
 
+    return () => {
+
+      document.removeEventListener(
+        "click",
+        handleClick
+      );
+
+    };
+
+
+  }, [
+    pathname,
+  ]);
+
+
+  return (
+
+    <>
+
+      {
+        loading && (
+          <EngineeringLoader />
+        )
+      }
+
+
+      {children}
+
+    </>
+
+  );
 
 }

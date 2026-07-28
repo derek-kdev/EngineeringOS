@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import api from "@/lib/api";
+import api from "@/lib/api/axios";
 
 
 

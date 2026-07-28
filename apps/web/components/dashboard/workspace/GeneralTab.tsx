@@ -1,13 +1,22 @@
 // components/dashboard/workspace/GeneralTab.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { useOrganization } from "@/hooks/useOrganizations";
+import { useOrganizationStore } from "@/stores/organization.store";
+import { useAuthStore } from "@/stores/auth.store";
 import { organizationsApi } from "@/lib/api/organizations";
-import { UpdateOrganizationDto } from "@/types/organization";
+import { UpdateOrganizationDto, OrganizationRole } from "@/types/organization";
 
 export default function GeneralTab({ organizationId }: { organizationId: string }) {
   const { organization, mutate } = useOrganization(organizationId);
+  const router = useRouter();
+  const clearCurrentOrganization = useOrganizationStore(
+    (s) => s.clearCurrentOrganization
+  );
+  const currentUser = useAuthStore((s) => s.user);
+
   const [name, setName] = useState(organization?.name || "");
   const [description, setDescription] = useState(organization?.description || "");
   const [industry, setIndustry] = useState(organization?.industry || "");
@@ -15,6 +24,19 @@ export default function GeneralTab({ organizationId }: { organizationId: string 
   const [size, setSize] = useState(organization?.size || "");
   const [isUpdating, setIsUpdating] = useState(false);
   const [message, setMessage] = useState("");
+
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteStatus, setDeleteStatus] = useState<"idle" | "success" | "error">("idle");
+  const [deleteMessage, setDeleteMessage] = useState("");
+
+  // Determine if the current user is the owner of this organization
+  const isOwner = useMemo(() => {
+    if (!organization || !currentUser) return false;
+    const membership = organization.memberships?.find(
+      (m) => m.userId === currentUser.id || m.user?.id === currentUser.id
+    );
+    return membership?.role === OrganizationRole.OWNER;
+  }, [organization, currentUser]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +55,47 @@ export default function GeneralTab({ organizationId }: { organizationId: string 
     }
   };
 
-  if (!organization) return <div>Loading...</div>;
+  const handleDelete = async () => {
+    if (!window.confirm("Are you sure you want to delete this workspace? This action cannot be undone.")) {
+      return;
+    }
+    setIsDeleting(true);
+    setDeleteStatus("idle");
+    setDeleteMessage("");
+
+    try {
+      await organizationsApi.deleteOrganization(organizationId);
+      setDeleteStatus("success");
+      setDeleteMessage("✅ Workspace deleted successfully. Redirecting...");
+      setTimeout(() => {
+        clearCurrentOrganization();
+        router.push("/dashboard/organization");
+      }, 2000);
+    } catch (error: any) {
+      setDeleteStatus("error");
+      setDeleteMessage(error?.response?.data?.message || "❌ Failed to delete workspace.");
+      setIsDeleting(false);
+    }
+  };
+
+  // Ensure website has a protocol on blur (if not empty)
+  const handleWebsiteBlur = () => {
+    const trimmed = website.trim();
+    if (trimmed && !/^https?:\/\//i.test(trimmed)) {
+      setWebsite(`https://${trimmed}`);
+    }
+  };
+
+  // If deletion succeeded, we show the success message even if organization fetch 404s
+  if (deleteStatus === "success") {
+    return (
+      <div className="p-6 text-center">
+        <p className="text-lg text-green-400">{deleteMessage}</p>
+      </div>
+    );
+  }
+
+  if (!organization) return <div className="text-white/60 p-4">Loading...</div>;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -68,9 +130,11 @@ export default function GeneralTab({ organizationId }: { organizationId: string 
       <div>
         <label className="block text-sm font-medium text-white/60">Website</label>
         <input
-          type="url"
+          type="text"
           value={website}
           onChange={(e) => setWebsite(e.target.value)}
+          onBlur={handleWebsiteBlur}
+          placeholder="https://example.com"
           className="mt-1 w-full rounded-lg border border-white/10 bg-[#0B132B] px-4 py-2 text-white"
         />
       </div>
@@ -92,6 +156,27 @@ export default function GeneralTab({ organizationId }: { organizationId: string 
         {isUpdating ? "Updating..." : "Update Workspace"}
       </button>
       {message && <p className="text-sm text-white/80">{message}</p>}
+
+      {/* Danger Zone – only visible to owner */}
+      {isOwner && (
+        <div className="mt-8 border-t border-white/10 pt-6">
+          <h4 className="text-sm font-semibold text-red-400">Danger Zone</h4>
+          <p className="text-xs text-white/40 mb-3">
+            Permanently delete this workspace and all associated data. This action cannot be undone.
+          </p>
+          {deleteStatus === "error" && (
+            <p className="text-sm text-red-400 mt-2">{deleteMessage}</p>
+          )}
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="rounded-full bg-red-500/20 px-6 py-2 font-medium text-red-400 transition hover:bg-red-500/30 disabled:opacity-50"
+          >
+            {isDeleting ? "Deleting..." : "Delete Workspace"}
+          </button>
+        </div>
+      )}
     </form>
   );
 }

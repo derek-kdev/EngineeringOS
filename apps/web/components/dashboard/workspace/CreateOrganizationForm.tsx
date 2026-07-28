@@ -4,6 +4,7 @@ import { useState } from "react";
 import { organizationsApi } from "@/lib/api/organizations";
 
 interface Props {
+  onClose?: () => void;
   onCreated?: () => void;
 }
 

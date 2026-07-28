@@ -9,7 +9,7 @@ import {
 
 import { useState } from "react";
 
-import api from "@/lib/api";
+import api from "@/lib/api/axios";
 
 
 export default function SecuritySection() {

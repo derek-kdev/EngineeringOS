@@ -41,7 +41,11 @@ from "./user/OrganizationSection";
 
 interface UserPanelProps {
 
-  open:boolean;
+  panel:
+    | "profile"
+    | "preferences"
+    | "security"
+    | "workspace";
 
   onClose:()=>void;
 
@@ -63,7 +67,7 @@ type PanelTab =
 
 export default function UserPanel({
 
-  open,
+  panel,
 
   onClose,
 
@@ -91,7 +95,11 @@ export default function UserPanel({
 
 
   const [activeTab,setActiveTab] =
-    useState<PanelTab>("profile");
+    useState<PanelTab>(
+      panel === "workspace"
+        ? "organization"
+        : panel
+    );
 
 
 
@@ -130,14 +138,10 @@ export default function UserPanel({
 
 
 
-    if(open){
-
-      document.addEventListener(
-        "mousedown",
-        handleClick
-      );
-
-    }
+    document.addEventListener(
+      "mousedown",
+      handleClick
+    );
 
 
 
@@ -152,7 +156,6 @@ export default function UserPanel({
 
 
   },[
-    open,
     onClose
   ]);
 
@@ -161,7 +164,7 @@ export default function UserPanel({
 
 
 
-  if(!open)
+  if(!panel)
     return null;
 
 

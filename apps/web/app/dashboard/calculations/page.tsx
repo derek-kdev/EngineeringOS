@@ -1,6 +1,7 @@
 "use client";
 
 
+import BackButton from "@/components/dashboard/ui/BackButton";
 import CalculatorHeader from "@/components/dashboard/calculations/CalculatorHeader";
 import FormulaLibrary from "@/components/dashboard/calculations/FormulaLibrary";
 import CalculatorPanel from "@/components/dashboard/calculations/CalculatorPanel";
@@ -19,6 +20,9 @@ space-y-8
 "
 
 >
+
+
+<BackButton />
 
 
 <CalculatorHeader />

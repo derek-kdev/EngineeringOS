@@ -5,6 +5,8 @@ import { useState } from "react";
 import { useOrganizationTasks } from "@/hooks/useTasks";
 import { tasksApi } from "@/lib/api/tasks";
 import { useOrganizationMembers } from "@/hooks/useOrganizations";
+import { TaskType } from "@/types/task";
+import type { Membership } from "@/types/organization";
 
 
 
@@ -58,7 +60,7 @@ export default function WorkspaceTaskBoard({
   const [
     taskType,
     setTaskType
-  ] = useState("GENERAL");
+  ] = useState<TaskType>(TaskType.GENERAL);
 
 
 
@@ -292,7 +294,7 @@ member.user?.email
 value={taskType}
 
 onChange={(e)=>
-setTaskType(e.target.value)
+setTaskType(e.target.value as TaskType)
 }
 
 className="
