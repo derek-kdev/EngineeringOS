@@ -21,8 +21,10 @@ export class MailService implements OnModuleInit {
     @Inject(AppLoggerToken)
     private readonly logger: AppLogger,
   ) {
-    this.appName = this.configService.get<string>('APP_NAME') || 'EngineeringOS';
-    this.baseUrl = this.configService.get<string>('APP_URL') || 'https://engineeringos.com';
+    this.appName =
+      this.configService.get<string>('APP_NAME') || 'EngineeringOS';
+    this.baseUrl =
+      this.configService.get<string>('APP_URL') || 'https://engineeringos.com';
   }
 
   async onModuleInit() {
@@ -30,9 +32,14 @@ export class MailService implements OnModuleInit {
     // __dirname = .../dist/src/mail
     // Go up 3 levels to reach the project root, then into src/mail/assets
     const logoPath = path.join(
-      __dirname,      // dist/src/mail
-      '..', '..', '..', // up to project root (apps/api)
-      'src', 'mail', 'assets', 'our_logo.jpg',
+      __dirname, // dist/src/mail
+      '..',
+      '..',
+      '..', // up to project root (apps/api)
+      'src',
+      'mail',
+      'assets',
+      'our_logo.jpg',
     );
     const imageBuffer = fs.readFileSync(logoPath);
     const base64 = imageBuffer.toString('base64');
@@ -40,14 +47,31 @@ export class MailService implements OnModuleInit {
   }
 
   async sendMail(to: string, subject: string, html: string): Promise<void> {
-    await this.mailerService.sendMail({
-      to,
-      subject,
-      html,
-    });
+    try {
+      await this.mailerService.sendMail({
+        to,
+        subject,
+        html,
+      });
+
+      this.logger.info(LogEvents.EMAIL_SENT, {
+        recipient: to,
+        subject,
+      });
+    } catch (error) {
+      this.logger.error(LogEvents.EMAIL_SENT + '.failed', error, {
+        recipient: to,
+        subject,
+      });
+
+      throw error;
+    }
   }
 
-  async sendEmailVerificationEmail(email: string, verificationUrl: string): Promise<void> {
+  async sendEmailVerificationEmail(
+    email: string,
+    verificationUrl: string,
+  ): Promise<void> {
     const subject = `Verify your email for ${this.appName}`;
 
     const html = emailVerificationTemplate({
