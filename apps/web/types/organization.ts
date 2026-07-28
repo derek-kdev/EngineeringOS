@@ -19,6 +19,17 @@ export enum MembershipStatus {
   REMOVED = "REMOVED",
 }
 
+export enum DateFormat {
+  DMY = "DMY",
+  MDY = "MDY",
+  YMD = "YMD",
+}
+
+export enum TimeFormat {
+  TWELVE_HOUR = "TWELVE_HOUR",
+  TWENTY_FOUR_HOUR = "TWENTY_FOUR_HOUR",
+}
+
 export interface User {
   id: string;
   email: string;
@@ -26,6 +37,21 @@ export interface User {
   lastName?: string;
   displayName?: string;
   avatarUrl?: string;
+}
+
+export interface OrganizationSettings {
+  id: string;
+  organizationId: string;
+  timezone: string;
+  currency: string;
+  defaultRole: OrganizationRole;
+  dateFormat: DateFormat;
+  timeFormat: TimeFormat;
+  weekStartsOn: number;
+  allowGuestAccess: boolean;
+  metadata?: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Organization {
@@ -68,7 +94,8 @@ export interface Invitation {
   email: string;
   role: OrganizationRole;
   status: InvitationStatus;
-  tokenHash: string;
+  tokenHash?: string;
+  token?: string;
   expiresAt: string;
   acceptedAt?: string | null;
   cancelledAt?: string | null;
@@ -78,23 +105,10 @@ export interface Invitation {
   invitedBy?: User;
 }
 
-export interface OrganizationSettings {
-  id: string;
-  organizationId: string;
-  timezone: string;
-  currency: string;
-  defaultRole: OrganizationRole;
-  dateFormat: string;
-  timeFormat: string;
-  weekStartsOn: number;
-  allowGuestAccess: boolean;
-  metadata?: Record<string, unknown> | null;
-  createdAt: string;
-  updatedAt: string;
-}
 
-
+// -----------------------------------------------------------------------------
 // DTOs
+// -----------------------------------------------------------------------------
 
 export interface CreateOrganizationDto {
   name: string;
@@ -103,6 +117,18 @@ export interface CreateOrganizationDto {
   industry?: string;
   website?: string;
   size?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface OrganizationSettingsUpdateDto {
+  timezone?: string;
+  currency?: string;
+  defaultRole?: OrganizationRole;
+  dateFormat?: DateFormat;
+  timeFormat?: TimeFormat;
+  weekStartsOn?: number;
+  allowGuestAccess?: boolean;
+  metadata?: Record<string, unknown>;
 }
 
 export interface UpdateOrganizationDto {
@@ -111,7 +137,8 @@ export interface UpdateOrganizationDto {
   industry?: string;
   website?: string;
   size?: string;
-  logoUrl?: string;
+  metadata?: Record<string, unknown>;
+  settings?: OrganizationSettingsUpdateDto;
 }
 
 export interface UpdateMemberRoleDto {
@@ -121,5 +148,4 @@ export interface UpdateMemberRoleDto {
 export interface InviteMemberDto {
   email: string;
   role: OrganizationRole;
-  message?: string;
 }

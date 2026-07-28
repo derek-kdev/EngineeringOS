@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-
 import {
   FaFacebookF,
   FaInstagram,
@@ -18,163 +17,92 @@ export default function DashboardFooter({
   expanded = true,
 }: DashboardFooterProps) {
   return (
-    <footer
-      className={`
-        mt-auto
-        border-t
-        border-white/10
-        bg-[#0B132B]
-        py-8
-        text-center
-        text-white
-        transition-all
-        duration-300
-        ${expanded ? "px-6" : "px-4"}
-      `}
-    >
-      <div className="mx-auto max-w-7xl space-y-5">
-
-        {/* Brand */}
+    <footer className="mt-auto border-t border-white/10 bg-[#0B132B] py-4 text-white">
+      <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 px-6 text-xs sm:text-sm">
+        {/* Logo + Name */}
         <Link
           href="/dashboard"
-          className="flex items-center justify-center gap-3"
+          className="flex items-center gap-2"
         >
           <Image
             src="/img/our_logo.jpg"
             alt="EngineeringOS Logo"
-            width={36}
-            height={36}
+            width={24}
+            height={24}
             className="rounded-md"
           />
-
-          <span className="text-lg font-bold text-white">
+          <span className="text-base font-bold text-white">
             EngineeringOS
           </span>
         </Link>
 
-
-        {/* Tagline */}
-        <p className="text-sm text-white/60">
-          Built for innovators, powered by intelligence.
-        </p>
-
-
-        {/* Main Navigation */}
-        <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-white/80">
-
+        {/* Main navigation */}
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-white/70">
           <Link href="/works" className="hover:text-[#00D2FF]">
             Works
           </Link>
-
-          <span className="text-white/20">·</span>
-
-          <Link href="/services" className="hover:text-[#00D2FF]">
-            Services
-          </Link>
-
-          <span className="text-white/20">·</span>
-
           <Link href="/about" className="hover:text-[#00D2FF]">
             About
           </Link>
-
-          <span className="text-white/20">·</span>
-
           <Link href="/pricing" className="hover:text-[#00D2FF]">
             Pricing
           </Link>
-
-          <span className="text-white/20">·</span>
-
           <Link href="/contacts" className="hover:text-[#00D2FF]">
-            Contact us
+            Contact
           </Link>
-
         </div>
 
-
-        {/* Legal */}
-        <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-white/40">
-
-          <Link href="/terms" className="hover:text-[#00D2FF]">
-            Terms & Conditions
-          </Link>
-
-          <span>|</span>
-
-          <Link href="/privacy" className="hover:text-[#00D2FF]">
-            Privacy Policy
-          </Link>
-
-          <span>|</span>
-
-          <Link href="/disclosures" className="hover:text-[#00D2FF]">
-            Disclosures
-          </Link>
-
-        </div>
-
-
-        {/* Socials */}
-        <div className="flex justify-center gap-5 pt-2 text-white/50">
-
+        {/* Social icons */}
+        <div className="flex items-center gap-4 text-white/50">
           <a
             href="https://x.com/engineeringos_gh"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-[#00D2FF]"
           >
-            <FaXTwitter size={18} />
+            <FaXTwitter size={16} />
           </a>
-
-
           <a
             href="https://linkedin.com/in/engineeringos.gh"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-[#00D2FF]"
           >
-            <FaLinkedinIn size={18} />
+            <FaLinkedinIn size={16} />
           </a>
-
-
           <a
             href="https://facebook.com/engineeringos"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-[#00D2FF]"
           >
-            <FaFacebookF size={18} />
+            <FaFacebookF size={16} />
           </a>
-
-
           <a
             href="https://instagram.com/engineering_os_gh"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-[#00D2FF]"
           >
-            <FaInstagram size={18} />
+            <FaInstagram size={16} />
           </a>
-
         </div>
 
-
-        {/* System Status */}
-        <div className="flex items-center justify-center gap-2 text-xs text-white/40">
-
-          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-
-          All systems operational
-
+        {/* Legal links + copyright */}
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-white/40 text-xs">
+          <Link href="/terms" className="hover:text-[#00D2FF]">
+            Terms
+          </Link>
+          <Link href="/privacy" className="hover:text-[#00D2FF]">
+            Privacy
+          </Link>
+          <Link href="/disclosures" className="hover:text-[#00D2FF]">
+            Disclosures
+          </Link>
+          <span className="text-white/30">
+            &copy; {new Date().getFullYear()} EngineeringOS
+          </span>
         </div>
-
-
-        {/* Copyright */}
-        <p className="text-xs text-white/30">
-          © {new Date().getFullYear()} EngineeringOS. All rights reserved.
-        </p>
-
       </div>
     </footer>
   );

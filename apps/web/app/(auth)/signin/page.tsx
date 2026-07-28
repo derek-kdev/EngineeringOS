@@ -1,79 +1,44 @@
 "use client";
 
 import { useState } from "react";
-
 import Link from "next/link";
-
 import { useRouter } from "next/navigation";
-
-import {
-  ArrowLeft,
-  Eye,
-  EyeOff,
-  Mail,
-  Lock,
-} from "lucide-react";
-
+import axios from "axios";
+import { ArrowLeft, Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { authService } from "@/services/auth.service";
-
 import { useAuth } from "@/hooks/useAuth";
-
 import { useAuthStore } from "@/stores/auth.store";
 
 export default function SignInPage() {
   const router = useRouter();
-
   const { login } = useAuth();
-
-  const setLoading = useAuthStore(
-    (state) => state.setLoading
-  );
+  const setLoading = useAuthStore((state) => state.setLoading);
 
   const [email, setEmail] = useState("");
-
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLocalLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const [showPassword, setShowPassword] =
-    useState(false);
-
-  const [loading, setLocalLoading] =
-    useState(false);
-
-  const [error, setError] =
-    useState("");
-
-
-
-  async function handleSubmit(
-    e: React.FormEvent<HTMLFormElement>
-  ) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-
     setError("");
-
     setLocalLoading(true);
-
     setLoading(true);
 
-
     try {
-      const response =
-        await authService.login({
-          email: email.trim().toLowerCase(),
-          password,
-        });
-
+      const response = await authService.login({
+        email: email.trim().toLowerCase(),
+        password,
+      });
 
       if (
         !response?.user ||
         !response?.tokens?.accessToken ||
         !response?.tokens?.refreshToken
       ) {
-        throw new Error(
-          "Invalid authentication response"
-        );
+        throw new Error("Invalid authentication response");
       }
-
 
       login(
         response.user,
@@ -81,366 +46,140 @@ export default function SignInPage() {
         response.tokens.refreshToken
       );
 
-
       router.replace("/dashboard");
-
-
     } catch (error: unknown) {
+      console.error("Login failed:", error);
 
-      console.error(
-        "Login failed:",
-        error
-      );
-
-
-      const message =
-        error?.response?.data?.message ||
-        "Unable to sign in. Please check your credentials.";
-
-
-      if (
-        message ===
-        "Your account has been locked due to multiple failed login attempts. A password reset email has been sent."
-      ) {
-
-        router.replace("/account-locked");
-
+      // 423 Locked – redirect with email so the user doesn't have to re-type it
+      if (axios.isAxiosError(error) && error.response?.status === 423) {
+        const lockedEmail = encodeURIComponent(email.trim().toLowerCase());
+        router.replace(`/account-locked?email=${lockedEmail}`);
         return;
-
       }
 
+      // Fallback on code or message
+      if (axios.isAxiosError(error)) {
+        const code = error.response?.data?.code;
+        const msg = error.response?.data?.message || "";
+
+        if (
+          code === "ACCOUNT_LOCKED" ||
+          msg.includes("locked due to multiple failed login attempts")
+        ) {
+          const lockedEmail = encodeURIComponent(email.trim().toLowerCase());
+          router.replace(`/account-locked?email=${lockedEmail}`);
+          return;
+        }
+      }
+
+      const message =
+        axios.isAxiosError(error)
+          ? error.response?.data?.message ||
+            "Unable to sign in. Please check your credentials."
+          : error instanceof Error
+            ? error.message
+            : "Unable to sign in. Please check your credentials.";
 
       setError(message);
-
-
     } finally {
-
       setLocalLoading(false);
-
       setLoading(false);
-
     }
   }
 
-
-
   return (
-    <main
-      className="
-        min-h-screen
-        flex
-        items-center
-        justify-center
-        bg-[#0B132B]
-        px-6
-        text-white
-      "
-    >
-
-      <div
-        className="
-          w-full
-          max-w-md
-          rounded-2xl
-          border
-          border-white/10
-          bg-white/5
-          backdrop-blur-xl
-          p-8
-          shadow-xl
-        "
-      >
-
+    <main className="min-h-screen flex items-center justify-center bg-[#0B132B] px-6 text-white">
+      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-8 shadow-xl">
         <Link
           href="/"
-          className="
-            flex
-            items-center
-            gap-2
-            mb-8
-            text-sm
-            text-white/60
-            hover:text-white
-          "
+          className="flex items-center gap-2 mb-8 text-sm text-white/60 hover:text-white"
         >
-          <ArrowLeft size={16}/>
+          <ArrowLeft size={16} />
           Back
         </Link>
 
-
-        <h1
-          className="
-            text-3xl
-            font-bold
-          "
-        >
-          Welcome Back
-        </h1>
-
-
-        <p
-          className="
-            mt-2
-            mb-8
-            text-white/60
-          "
-        >
+        <h1 className="text-3xl font-bold">Welcome Back</h1>
+        <p className="mt-2 mb-8 text-white/60">
           Sign in to your EngineeringOS workspace.
         </p>
 
-
-
         {error && (
-          <div
-            className="
-              mb-5
-              rounded-lg
-              border
-              border-red-500/30
-              bg-red-500/10
-              px-4
-              py-3
-              text-sm
-              text-red-300
-            "
-          >
+          <div className="mb-5 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
             {error}
           </div>
         )}
 
-
-
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-5"
-        >
-
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-
-            <label
-              className="
-                block
-                mb-2
-                text-sm
-                text-white/70
-              "
-            >
-              Email
-            </label>
-
-
+            <label className="block mb-2 text-sm text-white/70">Email</label>
             <div className="relative">
-
               <Mail
                 size={18}
-                className="
-                  absolute
-                  left-3
-                  top-1/2
-                  -translate-y-1/2
-                  text-[#00D2FF]
-                "
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00D2FF]"
               />
-
-
               <input
                 type="email"
                 value={email}
-                onChange={(e)=>
-                  setEmail(e.target.value)
-                }
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
                 placeholder="you@example.com"
-                className="
-                  w-full
-                  rounded-xl
-                  border
-                  border-white/10
-                  bg-black/20
-                  py-3
-                  pl-10
-                  pr-4
-                  outline-none
-                  focus:border-[#00D2FF]
-                "
+                className="w-full rounded-xl border border-white/10 bg-black/20 py-3 pl-10 pr-4 outline-none focus:border-[#00D2FF]"
               />
-
             </div>
-
           </div>
 
-
-
-
           <div>
-
-            <div
-              className="
-                flex
-                items-center
-                justify-between
-                mb-2
-              "
-            >
-
-              <label
-                className="
-                  text-sm
-                  text-white/70
-                "
-              >
-                Password
-              </label>
-
-
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm text-white/70">Password</label>
               <Link
                 href="/forgot-password"
-                className="
-                  text-xs
-                  text-[#00D2FF]
-                  hover:underline
-                "
+                className="text-xs text-[#00D2FF] hover:underline"
               >
                 Forgot password?
               </Link>
-
             </div>
 
-
-
             <div className="relative">
-
-
               <Lock
                 size={18}
-                className="
-                  absolute
-                  left-3
-                  top-1/2
-                  -translate-y-1/2
-                  text-[#FF6B00]
-                "
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-[#FF6B00]"
               />
-
-
-
               <input
-                type={
-                  showPassword
-                  ? "text"
-                  : "password"
-                }
+                type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e)=>
-                  setPassword(e.target.value)
-                }
+                onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
                 placeholder="Enter your password"
-                className="
-                  w-full
-                  rounded-xl
-                  border
-                  border-white/10
-                  bg-black/20
-                  py-3
-                  pl-10
-                  pr-12
-                  outline-none
-                  focus:border-[#FF6B00]
-                "
+                className="w-full rounded-xl border border-white/10 bg-black/20 py-3 pl-10 pr-12 outline-none focus:border-[#FF6B00]"
               />
-
-
-
               <button
                 type="button"
-                onClick={()=>
-                  setShowPassword(!showPassword)
-                }
-                className="
-                  absolute
-                  right-3
-                  top-1/2
-                  -translate-y-1/2
-                  text-white/60
-                "
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60"
               >
-
-                {
-                  showPassword
-                  ? <EyeOff size={18}/>
-                  : <Eye size={18}/>
-                }
-
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
-
-
             </div>
-
-
           </div>
-
-
-
 
           <button
             type="submit"
             disabled={loading}
-            className="
-              w-full
-              rounded-xl
-              bg-gradient-to-r
-              from-[#00D2FF]
-              to-[#FF6B00]
-              py-3
-              font-semibold
-              text-black
-              disabled:opacity-50
-            "
+            className="w-full rounded-xl bg-gradient-to-r from-[#00D2FF] to-[#FF6B00] py-3 font-semibold text-black disabled:opacity-50"
           >
-
-            {
-              loading
-              ? "Signing in..."
-              : "Sign In"
-            }
-
+            {loading ? "Signing in..." : "Sign In"}
           </button>
-
-
         </form>
 
-
-
-
-        <p
-          className="
-            mt-6
-            text-center
-            text-sm
-            text-white/60
-          "
-        >
+        <p className="mt-6 text-center text-sm text-white/60">
           Don&apos;t have an account?
-
-          <Link
-            href="/register"
-            className="
-              ml-2
-              text-[#00D2FF]
-              hover:underline
-            "
-          >
+          <Link href="/register" className="ml-2 text-[#00D2FF] hover:underline">
             Create one
           </Link>
-
         </p>
-
-
       </div>
-
     </main>
   );
 }

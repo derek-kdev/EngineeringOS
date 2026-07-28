@@ -1,6 +1,6 @@
 // apps/web/lib/api/organizations.ts
 
-import api from "@/lib/api";
+import api from "@/lib/api/axios";
 
 import {
   Organization,

@@ -1,3 +1,5 @@
+import type { LucideIcon } from "lucide-react";
+
 export type SearchCategory =
   | "Page"
   | "Project"
@@ -6,6 +8,9 @@ export type SearchCategory =
   | "Parameter"
   | "User"
   | "Document";
+
+
+import { ComponentType } from "react";
 
 
 export interface SearchItem {
@@ -24,6 +29,6 @@ export interface SearchItem {
 
   metadata?:Record<string,string>;
 
-  icon:any;
+  icon: ComponentType;
 
 }

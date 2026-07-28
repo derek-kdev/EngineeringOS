@@ -310,9 +310,9 @@ export default function ResetPasswordPage(){
 
       setError(
 
-        axiosError.response?.data?.message ||
-
-        "Unable to reset password."
+        error instanceof Error
+          ? error.message
+          : "Unable to reset password."
 
       );
 

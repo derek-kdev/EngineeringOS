@@ -67,7 +67,7 @@ export default function UserMenu({
 
 
     function handleClickOutside(
-      event: MouseEvent
+      event: MouseEvent | TouchEvent
     ) {
 
       const target = event.target as Node;

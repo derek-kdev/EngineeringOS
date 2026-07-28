@@ -115,8 +115,6 @@ useEffect(()=>{
 
 if(!query.trim()){
 
-setResults([]);
-
 return;
 
 }

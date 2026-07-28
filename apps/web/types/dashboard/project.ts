@@ -18,6 +18,8 @@ export interface Project {
 
   members:number;
 
+  progress:number;
+
   updatedAt:string;
 
 }

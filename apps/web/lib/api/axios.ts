@@ -100,6 +100,14 @@ api.interceptors.response.use(
       error.response?.data
     );
 
+    if (error.response?.status === 401) {
+
+      useAuthStore
+        .getState()
+        .clearAuth();
+
+    }
+
 
     return Promise.reject(error);
 

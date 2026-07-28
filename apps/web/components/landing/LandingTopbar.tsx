@@ -3,213 +3,68 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { useState } from "react";
+import { Menu, X } from "lucide-react";
 
 export default function LandingTopbar() {
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
   return (
-    <header
-      className="
-        fixed
-        top-0
-        left-0
-        w-full
-        z-50
-        pointer-events-none
-        px-6
-        py-5
-      "
-    >
-      <div
-        className="
-          pointer-events-auto
-          mx-auto
-          max-w-7xl
-          flex
-          items-center
-          justify-between
-          rounded-2xl
-          border
-          border-white/10
-          bg-white/[0.03]
-          backdrop-blur-2xl
-          shadow-[0_8px_32px_rgba(0,0,0,0.25)]
-          px-6
-          py-3
-        "
-      >
-
+    <header className="fixed top-0 left-0 w-full z-50 pointer-events-none px-6 py-5">
+      <div className="pointer-events-auto mx-auto max-w-7xl flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.25)] px-6 py-3">
         {/* Logo */}
-        <Link
-          href="/"
-          className="
-            flex
-            items-center
-            gap-3
-            group
-          "
-        >
-
+        <Link href="/" className="flex items-center gap-3 group">
           <motion.div
-            whileHover={{
-              scale: 1.08,
-            }}
-            transition={{
-              duration: 0.3,
-            }}
-            className="
-              relative
-              h-10
-              w-10
-              overflow-hidden
-              rounded-full
-              shadow-[0_0_25px_rgba(0,210,255,0.35)]
-            "
+            whileHover={{ scale: 1.08 }}
+            transition={{ duration: 0.3 }}
+            className="relative h-10 w-10 overflow-hidden rounded-full shadow-[0_0_25px_rgba(0,210,255,0.35)]"
           >
-            <Image
-              src="/img/our_logo.jpg"
-              alt="EngineeringOS Logo"
-              fill
-              className="object-cover"
-              priority
-            />
+            <Image src="/img/our_logo.jpg" alt="EngineeringOS Logo" fill className="object-cover" priority />
           </motion.div>
-
-
-          <span
-            className="
-              text-xl
-              font-bold
-              tracking-tight
-              text-white
-            "
-          >
-            Engineering
-            <span
-              className="
-                text-[#FF6B00]
-              "
-            >
-              OS
-            </span>
+          <span className="text-xl font-bold tracking-tight text-white">
+            Engineering<span className="text-[#FF6B00]">OS</span>
           </span>
-
         </Link>
 
-
-
-        {/* Middle Navigation */}
-        <nav
-          className="
-            hidden
-            sm:flex
-            items-center
-            gap-4
-          "
-        >
-
-          <Link
-            href="/contacts"
-            className="
-              rounded-full
-              border
-              border-[#00D2FF]/30
-              bg-[#00D2FF]/5
-              px-5
-              py-2
-              text-sm
-              font-medium
-              text-white
-              transition
-              hover:bg-[#00D2FF]/15
-              hover:border-[#00D2FF]/60
-            "
-          >
+        {/* Desktop Navigation */}
+        <nav className="hidden sm:flex items-center gap-4">
+          <Link href="/contacts" className="rounded-full border border-[#00D2FF]/30 bg-[#00D2FF]/5 px-5 py-2 text-sm font-medium text-white transition hover:bg-[#00D2FF]/15 hover:border-[#00D2FF]/60">
             Contact
           </Link>
-
-
-          <Link
-            href="/pricing"
-            className="
-              rounded-full
-              border
-              border-[#00D2FF]/30
-              bg-[#00D2FF]/5
-              px-5
-              py-2
-              text-sm
-              font-medium
-              text-white
-              transition
-              hover:bg-[#00D2FF]/15
-              hover:border-[#00D2FF]/60
-            "
-          >
+          <Link href="/pricing" className="rounded-full border border-[#00D2FF]/30 bg-[#00D2FF]/5 px-5 py-2 text-sm font-medium text-white transition hover:bg-[#00D2FF]/15 hover:border-[#00D2FF]/60">
             Pricing
           </Link>
-
         </nav>
 
-
-
-        {/* Authentication */}
-        <div
-          className="
-            flex
-            items-center
-            gap-3
-          "
-        >
-
-          {/* Correct Sign In Route */}
-          <Link
-            href="/signin"
-            className="
-              rounded-full
-              border
-              border-[#00D2FF]/40
-              bg-white/5
-              px-5
-              py-2
-              text-sm
-              font-medium
-              text-white
-              backdrop-blur-md
-              transition
-              hover:bg-[#00D2FF]/10
-              hover:border-[#00D2FF]
-            "
-          >
+        {/* Auth Buttons + Mobile Menu Toggle */}
+        <div className="flex items-center gap-3">
+          <Link href="/signin" className="rounded-full border border-[#00D2FF]/40 bg-white/5 px-5 py-2 text-sm font-medium text-white backdrop-blur-md transition hover:bg-[#00D2FF]/10 hover:border-[#00D2FF]">
             Sign In
           </Link>
-
-
-
-          {/* Register Route */}
-          <Link
-            href="/register"
-            className="
-              rounded-full
-              bg-gradient-to-r
-              from-[#FF6B00]
-              to-[#FF9D00]
-              px-6
-              py-2
-              text-sm
-              font-semibold
-              text-white
-              shadow-[0_0_30px_rgba(255,107,0,0.45)]
-              transition
-              hover:scale-105
-            "
-          >
+          <Link href="/register" className="rounded-full bg-gradient-to-r from-[#FF6B00] to-[#FF9D00] px-6 py-2 text-sm font-semibold text-white shadow-[0_0_30px_rgba(255,107,0,0.45)] transition hover:scale-105">
             Get Started
           </Link>
-
+          <button
+            onClick={() => setMobileNavOpen(!mobileNavOpen)}
+            className="sm:hidden p-1 rounded-md text-white hover:bg-white/10"
+            aria-label="Toggle mobile menu"
+          >
+            {mobileNavOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
-
-
       </div>
 
+      {/* Mobile Navigation Dropdown */}
+      {mobileNavOpen && (
+        <div className="pointer-events-auto mt-3 mx-auto max-w-7xl rounded-xl border border-white/10 bg-[#111827] p-4 flex flex-col gap-2 sm:hidden">
+          <Link href="/contacts" className="px-4 py-2 text-sm text-white/70 hover:bg-white/10 rounded-lg transition">
+            Contact
+          </Link>
+          <Link href="/pricing" className="px-4 py-2 text-sm text-white/70 hover:bg-white/10 rounded-lg transition">
+            Pricing
+          </Link>
+        </div>
+      )}
     </header>
   );
 }

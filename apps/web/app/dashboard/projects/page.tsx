@@ -9,14 +9,17 @@ import ProjectCard from "@/components/dashboard/projects/ProjectCard";
 
 import EmptyState from "@/components/dashboard/ui/EmptyState";
 
+import type { Project } from "@/types/dashboard/project";
 
-const projects=[
+
+const projects: Project[] = [
 
 {
 id:"1",
 name:"Solar Microgrid System",
 description:"Renewable energy optimisation platform.",
 status:"Active",
+progress:65,
 owner:"Kingsley",
 members:5,
 updatedAt:"Today"
@@ -28,6 +31,7 @@ id:"2",
 name:"Bridge Structural Analysis",
 description:"Finite element analysis workflow.",
 status:"Prototype",
+progress:42,
 owner:"Engineering Team",
 members:8,
 updatedAt:"Yesterday"

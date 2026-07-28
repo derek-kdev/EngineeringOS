@@ -53,7 +53,7 @@ export async function forgotPassword(
 | Payload:
 | {
 |   token:string,
-|   password:string
+|   newPassword:string
 | }
 |
 |--------------------------------------------------------------------------
@@ -70,7 +70,7 @@ export async function resetPassword(
       {
         token,
 
-        password,
+        newPassword: password,
 
       }
     );
