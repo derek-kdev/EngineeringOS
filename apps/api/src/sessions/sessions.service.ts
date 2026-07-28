@@ -1,17 +1,20 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
+
 import { PrismaService } from '../prisma/prisma.service';
 import { Session } from '@prisma/client';
 
+import { AppLogger, AppLoggerToken, LogEvents } from '../observability/logging';
+
 @Injectable()
 export class SessionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(AppLoggerToken)
+    private readonly logger: AppLogger,
+  ) {}
 
   /**
    * Creates a new session for a user.
-   * @param userId - ID of the authenticated user
-   * @param ipAddress - client IP (optional)
-   * @param userAgent - client user-agent (optional)
-   * @param expiresInSeconds - session lifetime (default 7 days, same as refresh token)
    */
   async createSession(
     userId: string,
@@ -19,49 +22,110 @@ export class SessionsService {
     userAgent?: string,
     expiresInSeconds: number = 7 * 24 * 60 * 60,
   ): Promise<Session> {
-    const expiresAt = new Date(Date.now() + expiresInSeconds * 1000);
-    return this.prisma.session.create({
-      data: {
+    try {
+      const expiresAt = new Date(Date.now() + expiresInSeconds * 1000);
+
+      const session = await this.prisma.session.create({
+        data: {
+          userId,
+          ipAddress: ipAddress?.slice(0, 45),
+          userAgent: userAgent?.slice(0, 255),
+          expiresAt,
+        },
+      });
+
+      this.logger.info(LogEvents.SESSION_CREATED, {
+        sessionId: session.id,
         userId,
-        ipAddress: ipAddress?.slice(0, 45), // IPv6 max length
-        userAgent: userAgent?.slice(0, 255),
         expiresAt,
-      },
-    });
+      });
+
+      return session;
+    } catch (error) {
+      this.logger.error(LogEvents.SESSION_CREATED + '.failed', error, {
+        userId,
+      });
+
+      throw error;
+    }
   }
 
   /**
    * Revokes a specific session.
    */
   async revokeSession(sessionId: string): Promise<void> {
-    await this.prisma.session.update({
-      where: { id: sessionId },
-      data: { revokedAt: new Date() },
-    });
+    try {
+      await this.prisma.session.update({
+        where: {
+          id: sessionId,
+        },
+        data: {
+          revokedAt: new Date(),
+        },
+      });
+
+      this.logger.info(LogEvents.SESSION_REVOKED, {
+        sessionId,
+      });
+    } catch (error) {
+      this.logger.error(LogEvents.SESSION_REVOKED + '.failed', error, {
+        sessionId,
+      });
+
+      throw error;
+    }
   }
 
   /**
    * Revokes all active sessions for a user.
    */
   async revokeAllSessions(userId: string): Promise<void> {
-    await this.prisma.session.updateMany({
-      where: {
+    try {
+      const result = await this.prisma.session.updateMany({
+        where: {
+          userId,
+          revokedAt: null,
+        },
+        data: {
+          revokedAt: new Date(),
+        },
+      });
+
+      this.logger.info(LogEvents.SESSION_REVOKED_ALL, {
         userId,
-        revokedAt: null,
-      },
-      data: { revokedAt: new Date() },
-    });
+        revokedCount: result.count,
+      });
+    } catch (error) {
+      this.logger.error(LogEvents.SESSION_REVOKED_ALL + '.failed', error, {
+        userId,
+      });
+
+      throw error;
+    }
   }
 
   /**
-   * Optionally cleans expired sessions (can be called by a scheduled job).
+   * Cleans expired sessions.
    */
   async cleanExpiredSessions(): Promise<number> {
-    const result = await this.prisma.session.deleteMany({
-      where: {
-        expiresAt: { lt: new Date() },
-      },
-    });
-    return result.count;
+    try {
+      const result = await this.prisma.session.deleteMany({
+        where: {
+          expiresAt: {
+            lt: new Date(),
+          },
+        },
+      });
+
+      this.logger.debug(LogEvents.SESSION_CLEANUP, {
+        deletedCount: result.count,
+      });
+
+      return result.count;
+    } catch (error) {
+      this.logger.error(LogEvents.SESSION_CLEANUP + '.failed', error);
+
+      throw error;
+    }
   }
 }

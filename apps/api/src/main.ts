@@ -1,24 +1,22 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import compression from 'compression';
 import { json, urlencoded } from 'express';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import {
+  LoggingExceptionFilter,
+  LoggingInterceptor,
+} from './observability/logging';
 
 const logger = new Logger('Bootstrap');
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    logger:
-      process.env.NODE_ENV === 'production'
-        ? ['error', 'warn', 'log']
-        : ['error', 'warn', 'log', 'debug', 'verbose'],
-  });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  /* Security */
+  /* Security, CORS, Compression */
 
   app.use(
     helmet({
@@ -109,6 +107,13 @@ async function bootstrap() {
       },
     }),
   );
+
+  // --- Register global observability components ---
+  // Get the filter and interceptor from the DI container (or create instances)
+  const exceptionFilter = app.get(LoggingExceptionFilter);
+  const loggingInterceptor = app.get(LoggingInterceptor);
+  app.useGlobalFilters(exceptionFilter);
+  app.useGlobalInterceptors(loggingInterceptor);
 
   /* Graceful Shutdown */
   app.enableShutdownHooks();

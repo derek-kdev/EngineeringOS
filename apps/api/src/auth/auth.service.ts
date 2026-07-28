@@ -7,9 +7,10 @@ import {
   NotFoundException,
   HttpStatus,
   HttpException,
+  Inject,
 } from '@nestjs/common';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { LoginAttempt } from '@prisma/client';
+import { AppLogger, LogEvents } from '../observability/logging';
+import { AppLoggerToken } from '../observability/logging';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/user.service';
 import { PasswordService } from '../common/security/password.service';
@@ -27,6 +28,7 @@ import { CreateOrganizationDto } from '../organizations/dto';
 @Injectable()
 export class AuthService {
   constructor(
+    @Inject(AppLoggerToken) private readonly logger: AppLogger,
     private readonly usersService: UsersService,
     private readonly passwordService: PasswordService,
     private readonly jwtService: JwtService,
@@ -37,94 +39,111 @@ export class AuthService {
     private readonly organizationService: OrganizationService,
   ) {}
 
-  // ─── Registration ────────────────────────────────────────────────────
+  // ─── Registration ──────────────────────────────────────────────────────
 
   async register(
     dto: RegisterDto,
     ipAddress?: string,
     userAgent?: string,
   ): Promise<{ user: any; tokens: AuthTokens }> {
-    const passwordHash = await this.passwordService.hash(dto.password);
+    try {
+      const passwordHash = await this.passwordService.hash(dto.password);
 
-    // ─── MODIFIED: Wrap entire registration in a transaction ──────────────
-    const { user, tokens } = await this.prisma.$transaction(async (tx) => {
-      //Create user (no organization)
-      const user = await this.usersService.create(
-        {
-          firstName: dto.firstName,
-          lastName: dto.lastName,
-          email: dto.email,
-          passwordHash,
-        },
-        tx,
-      );
-
-      // 2. Optionally create organization
-      if (dto.organization?.create) {
-        const orgDto: CreateOrganizationDto = {
-          name: dto.organization.name!,
-          slug: dto.organization.slug, // may be undefined → auto‑generated
-          // other fields can be added later if needed
-        };
-        await this.organizationService.createOrganization(
-          user.id,
-          orgDto,
-          tx, // pass the same transaction
+      const { user, tokens } = await this.prisma.$transaction(async (tx) => {
+        // 1. Create user (no organization)
+        const user = await this.usersService.create(
+          {
+            firstName: dto.firstName,
+            lastName: dto.lastName,
+            email: dto.email,
+            passwordHash,
+          },
+          tx,
         );
+
+        // 2. Optionally create organization
+        if (dto.organization?.create) {
+          const orgDto: CreateOrganizationDto = {
+            name: dto.organization.name!,
+            slug: dto.organization.slug,
+          };
+
+          await this.organizationService.createOrganization(
+            user.id,
+            orgDto,
+            tx,
+          );
+        }
+
+        // 3. Generate JWT tokens
+        const tokens = await this.generateTokens({
+          id: user.id,
+          email: user.email,
+          role: user.role,
+        });
+
+        // 4. Store refresh token
+        const refreshTokenHash = this.hashToken(tokens.refreshToken);
+        const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+        await tx.refreshToken.create({
+          data: {
+            userId: user.id,
+            tokenHash: refreshTokenHash,
+            expiresAt: refreshExpiry,
+          },
+        });
+
+        // 5. Create session
+        const sessionExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+        await tx.session.create({
+          data: {
+            userId: user.id,
+            ipAddress: ipAddress?.slice(0, 45),
+            userAgent: userAgent?.slice(0, 255),
+            expiresAt: sessionExpiry,
+          },
+        });
+
+        return { user, tokens };
+      });
+
+      // Send verification email if configured
+      const globalSendEmail =
+        process.env.SEND_VERIFICATION_EMAIL_ON_REGISTER !== 'true';
+
+      const shouldSend =
+        dto.sendVerificationEmail !== undefined
+          ? dto.sendVerificationEmail
+          : globalSendEmail;
+
+      if (shouldSend) {
+        setImmediate(() => {
+          this.emailVerificationService
+            .createAndSendVerificationEmail(user.id)
+            .catch((err) => {
+              console.error('Failed to send verification email:', err);
+            });
+        });
       }
 
-      // 3. Generate JWT tokens (can be inside or outside transaction)
-      const tokens = await this.generateTokens({
-        id: user.id,
+      this.logger.info(LogEvents.AUTH_REGISTER, {
+        userId: user.id,
         email: user.email,
-        role: user.role,
-      });
-
-      // 4. Store refresh token
-      const refreshTokenHash = this.hashToken(tokens.refreshToken);
-      const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-      await tx.refreshToken.create({
-        data: {
-          userId: user.id,
-          tokenHash: refreshTokenHash,
-          expiresAt: refreshExpiry,
-        },
-      });
-
-      // 5. Create a session record
-      const sessionExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-      await tx.session.create({
-        data: {
-          userId: user.id,
-          ipAddress: ipAddress?.slice(0, 45),
-          userAgent: userAgent?.slice(0, 255),
-          expiresAt: sessionExpiry,
-        },
+        ipAddress,
+        userAgent,
       });
 
       return { user, tokens };
-    });
-
-    // Send verification email if configured
-    const globalSendEmail =
-      process.env.SEND_VERIFICATION_EMAIL_ON_REGISTER !== 'true';
-    const shouldSend =
-      dto.sendVerificationEmail !== undefined
-        ? dto.sendVerificationEmail
-        : globalSendEmail;
-
-    if (shouldSend) {
-      setImmediate(() => {
-        this.emailVerificationService
-          .createAndSendVerificationEmail(user.id)
-          .catch((err) => {
-            // Log error but don't fail registration
-            console.error('Failed to send verification email:', err);
-          });
+    } catch (error) {
+      this.logger.error(LogEvents.AUTH_REGISTER + '.failed', error, {
+        email: dto.email,
+        ipAddress,
       });
-    }
 
-    return { user, tokens };
+      throw error;
+    }
   }
 
   // ─── Login ──────────────────────────────────────────────────────────
@@ -134,50 +153,32 @@ export class AuthService {
     ipAddress?: string,
     userAgent?: string,
   ): Promise<{ user: any; tokens: AuthTokens }> {
-    // 1. Find user by email
-    const user = await this.usersService.findByEmail(dto.email);
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+    try {
+      // 1. Find user by email
+      const user = await this.usersService.findByEmail(dto.email);
+      if (!user) {
+        this.logger.warn(LogEvents.AUTH_LOGIN + '.failed', {
+          email: dto.email,
+          reason: 'User not found',
+          ipAddress,
+        });
 
-    // 2. Check if account is locked
-    const attemptRecord = await this.prisma.loginAttempt.findUnique({
-      where: { email: user.email },
-    });
-    if (attemptRecord && attemptRecord.lockedUntil !== null) {
-      // lockedUntil is set to a far‑future date, so treat as locked
-      throw new HttpException(
-        {
-          code: 'ACCOUNT_LOCKED',
-          message:
-            'Your account has been locked due to multiple failed login attempts. A password reset email has been sent.',
-        },
-        HttpStatus.LOCKED, // 423
-      );
-    }
+        throw new UnauthorizedException('Invalid credentials');
+      }
 
-    // 3. Validate password
-    const isMatch = await this.passwordService.compare(
-      dto.password,
-      user.passwordHash,
-    );
-    if (!isMatch) {
-      // Handle failed attempt – atomic increment and possible lock
-      const { locked, newlyLocked } = await this.handleFailedLoginAttempt(
-        user.email,
-      );
-      if (locked) {
-        // If this is the first time the account becomes locked, send a password reset email
-        if (newlyLocked) {
-          setImmediate(() => {
-            this.passwordResetService
-              .requestPasswordReset(user.email)
-              .catch((err) => {
-                console.error('Failed to send password reset email:', err);
-              });
-          });
-        }
-        // Throw a locked exception
+      // 2. Check if account is locked
+      const attemptRecord = await this.prisma.loginAttempt.findUnique({
+        where: { email: user.email },
+      });
+
+      if (attemptRecord && attemptRecord.lockedUntil !== null) {
+        this.logger.warn(LogEvents.AUTH_LOGIN + '.failed', {
+          userId: user.id,
+          email: user.email,
+          reason: 'Account locked',
+          ipAddress,
+        });
+
         throw new HttpException(
           {
             code: 'ACCOUNT_LOCKED',
@@ -187,58 +188,128 @@ export class AuthService {
           HttpStatus.LOCKED,
         );
       }
-      // Not locked yet – generic invalid credentials
-      throw new UnauthorizedException('Invalid credentials');
-    }
 
-    // 4. Successful login – proceed with token generation inside a transaction
-    const tokens = await this.prisma.$transaction(async (tx) => {
-      // Reset login attempts
-      await tx.loginAttempt.upsert({
-        where: { email: user.email },
-        update: { attempts: 0, lockedUntil: null },
-        create: { email: user.email, attempts: 0 },
+      // 3. Validate password
+      const isMatch = await this.passwordService.compare(
+        dto.password,
+        user.passwordHash,
+      );
+
+      if (!isMatch) {
+        // Handle failed attempt – atomic increment and possible lock
+        const { locked, newlyLocked } = await this.handleFailedLoginAttempt(
+          user.email,
+        );
+
+        if (locked) {
+          // If this is the first time the account becomes locked, send a password reset email
+          if (newlyLocked) {
+            setImmediate(() => {
+              this.passwordResetService
+                .requestPasswordReset(user.email)
+                .catch((err) => {
+                  console.error('Failed to send password reset email:', err);
+                });
+            });
+          }
+
+          this.logger.warn(LogEvents.AUTH_LOGIN + '.failed', {
+            userId: user.id,
+            email: user.email,
+            reason: 'Account locked after failed attempts',
+            ipAddress,
+          });
+
+          throw new HttpException(
+            {
+              code: 'ACCOUNT_LOCKED',
+              message:
+                'Your account has been locked due to multiple failed login attempts. A password reset email has been sent.',
+            },
+            HttpStatus.LOCKED,
+          );
+        }
+
+        this.logger.warn(LogEvents.AUTH_LOGIN + '.failed', {
+          userId: user.id,
+          email: user.email,
+          reason: 'Invalid password',
+          ipAddress,
+        });
+
+        throw new UnauthorizedException('Invalid credentials');
+      }
+
+      // 4. Successful login – proceed with token generation inside a transaction
+      const tokens = await this.prisma.$transaction(async (tx) => {
+        // Reset login attempts
+        await tx.loginAttempt.upsert({
+          where: { email: user.email },
+          update: { attempts: 0, lockedUntil: null },
+          create: { email: user.email, attempts: 0 },
+        });
+
+        // Generate tokens
+        const tokens = await this.generateTokens({
+          id: user.id,
+          email: user.email,
+          role: user.role,
+        });
+
+        // Store refresh token
+        const refreshTokenHash = this.hashToken(tokens.refreshToken);
+        const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+        await tx.refreshToken.create({
+          data: {
+            userId: user.id,
+            tokenHash: refreshTokenHash,
+            expiresAt: refreshExpiry,
+          },
+        });
+
+        await tx.user.update({
+          where: { id: user.id },
+          data: { lastLoginAt: new Date() },
+        });
+
+        const sessionExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+        await tx.session.create({
+          data: {
+            userId: user.id,
+            ipAddress: ipAddress?.slice(0, 45),
+            userAgent: userAgent?.slice(0, 255),
+            expiresAt: sessionExpiry,
+          },
+        });
+
+        return tokens;
       });
 
-      // Generate tokens (unchanged)
-      const tokens = await this.generateTokens({
-        id: user.id,
+      this.logger.info(LogEvents.AUTH_LOGIN, {
+        userId: user.id,
         email: user.email,
-        role: user.role,
+        ipAddress,
+        userAgent,
       });
 
-      // Store refresh token, update lastLogin, create session (unchanged)
-      const refreshTokenHash = this.hashToken(tokens.refreshToken);
-      const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-      await tx.refreshToken.create({
-        data: {
-          userId: user.id,
-          tokenHash: refreshTokenHash,
-          expiresAt: refreshExpiry,
-        },
-      });
+      return { user, tokens };
+    } catch (error) {
+      // Avoid duplicate logs for expected authentication failures
+      if (
+        !(error instanceof UnauthorizedException) &&
+        !(error instanceof HttpException)
+      ) {
+        this.logger.error(LogEvents.AUTH_LOGIN + '.failed', error, {
+          email: dto.email,
+          ipAddress,
+        });
+      }
 
-      await tx.user.update({
-        where: { id: user.id },
-        data: { lastLoginAt: new Date() },
-      });
-
-      const sessionExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-      await tx.session.create({
-        data: {
-          userId: user.id,
-          ipAddress: ipAddress?.slice(0, 45),
-          userAgent: userAgent?.slice(0, 255),
-          expiresAt: sessionExpiry,
-        },
-      });
-
-      return tokens;
-    });
-
-    return { user, tokens };
+      throw error;
+    }
   }
-
   // ─── Refresh Token ──────────────────────────────────────────────────
 
   async refresh(dto: RefreshTokenDto): Promise<AuthTokens> {
@@ -296,14 +367,22 @@ export class AuthService {
   // ─── Logout ─────────────────────────────────────────────────────────
 
   async logout(userId: string): Promise<void> {
-    // Revoke all refresh tokens for the user (or the current one if we have it)
-    await this.prisma.refreshToken.updateMany({
-      where: { userId, revokedAt: null },
-      data: { revokedAt: new Date() },
-    });
+    try {
+      // Revoke all refresh tokens for the user (or the current one if we have it)
+      await this.prisma.refreshToken.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
 
-    //Revoke all active sessions for the user
-    await this.sessionsService.revokeAllSessions(userId);
+      // Revoke all active sessions for the user
+      await this.sessionsService.revokeAllSessions(userId);
+
+      this.logger.info(LogEvents.AUTH_LOGOUT, { userId });
+    } catch (error) {
+      this.logger.error(LogEvents.AUTH_LOGOUT + '.failed', error, { userId });
+
+      throw error;
+    }
   }
 
   // ─── Forgot Password ───────────────────────────────────────────────

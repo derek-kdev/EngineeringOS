@@ -13,6 +13,7 @@ import { TasksModule } from './tasks/tasks.module';
 import { CommonModule } from './common/common.module';
 import { SearchModule } from './search/search.module';
 import { MaterialsModule } from './modules/materials/materials.module';
+import { LoggingModule } from './observability/logging';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { MaterialsModule } from './modules/materials/materials.module';
       }),
       inject: [ConfigService],
     }),
+    LoggingModule,
     PrismaModule,
     UsersModule,
     AuthModule,
