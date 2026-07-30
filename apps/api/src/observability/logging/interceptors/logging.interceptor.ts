@@ -8,7 +8,7 @@ import {
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { AppLogger } from '../interfaces/app-logger.interface';
-import { RequestContextService } from '../services/request-context.service';
+import { RequestContextService } from '../request-context.service';
 import { AppLoggerToken } from '../services/logger.factory';
 
 @Injectable()

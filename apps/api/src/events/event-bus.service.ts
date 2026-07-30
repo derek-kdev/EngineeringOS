@@ -1,10 +1,10 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { IEventPublisher } from '../interfaces/event-publisher.interface';
-import { ApplicationEvent } from '../interfaces/application-event.interface';
-import { AppLogger } from '../../observability/logging/interfaces/app-logger.interface';
-import { AppLoggerToken } from '../../observability/logging/services/logger.factory';
-import { RequestContextService } from '../../observability/logging/services/request-context.service';
+import { IEventPublisher } from './interfaces/event-publisher.interface';
+import { ApplicationEvent } from './interfaces/application-event.interface';
+import { AppLogger } from '../observability/logging/interfaces/app-logger.interface';
+import { AppLoggerToken } from '../observability/logging/services/logger.factory';
+import { RequestContextService } from '../observability/logging/request-context.service';
 
 @Injectable()
 export class EventBusService implements IEventPublisher {

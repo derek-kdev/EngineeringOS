@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AsyncLocalStorage } from 'async_hooks';
-import { RequestContext } from '../interfaces/request-context.interface';
+import { RequestContext } from './interfaces/request-context.interface';
 import { randomUUID } from 'crypto';
 
 @Injectable()

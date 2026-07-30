@@ -1,6 +1,6 @@
 import { Module, Global } from '@nestjs/common';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { EventBusService } from './services/event-bus.service';
+import { EventBusService } from './event-bus.service';
 import { EVENT_PUBLISHER } from './constants/tokens.constants';
 import { LoggingModule } from '../observability/logging/logging.module';
 

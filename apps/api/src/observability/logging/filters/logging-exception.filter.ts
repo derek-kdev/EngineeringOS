@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AppLogger } from '../interfaces/app-logger.interface';
-import { RequestContextService } from '../services/request-context.service';
+import { RequestContextService } from '../request-context.service';
 import { AppLoggerToken } from '../services/logger.factory';
 
 @Injectable()

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PinoLogger } from 'nestjs-pino';
-import { AppLogger } from '../interfaces/app-logger.interface';
+import { AppLogger } from './interfaces/app-logger.interface';
 import { RequestContextService } from './request-context.service';
 
 @Injectable()
