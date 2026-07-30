@@ -7,23 +7,13 @@ import { OrganizationService } from './organization.service';
 
 import { SearchModule } from '../search/search.module';
 
-
 @Module({
-  imports: [
-    PrismaModule,
-    forwardRef(() => SearchModule),
-  ],
+  imports: [PrismaModule, forwardRef(() => SearchModule)],
 
-  controllers: [
-    OrganizationController,
-  ],
+  controllers: [OrganizationController],
 
-  providers: [
-    OrganizationService,
-  ],
+  providers: [OrganizationService],
 
-  exports: [
-    OrganizationService,
-  ],
+  exports: [OrganizationService],
 })
 export class OrganizationModule {}

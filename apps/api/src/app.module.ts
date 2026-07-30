@@ -14,7 +14,7 @@ import { CommonModule } from './common/common.module';
 import { SearchModule } from './search/search.module';
 import { MaterialsModule } from './modules/materials/materials.module';
 import { LoggingModule } from './observability/logging';
-
+import { ApplicationEventsModule } from './events/application-events.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -37,6 +37,7 @@ import { LoggingModule } from './observability/logging';
       inject: [ConfigService],
     }),
     LoggingModule,
+    ApplicationEventsModule,
     PrismaModule,
     UsersModule,
     AuthModule,

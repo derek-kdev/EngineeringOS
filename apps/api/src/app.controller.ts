@@ -5,9 +5,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 @ApiTags('App')
 @Controller()
 export class AppController {
-  constructor() {
-    console.log('AppController initialized');
-  }
+  constructor() {}
   @Get()
   @ApiOperation({ summary: 'Get API information' })
   @ApiResponse({ status: 200, description: 'Returns API metadataa' })

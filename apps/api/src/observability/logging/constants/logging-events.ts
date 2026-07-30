@@ -70,9 +70,21 @@ export const LogEvents = {
   BACKGROUND_JOB_COMPLETED: 'background-job.completed',
   BACKGROUND_JOB_FAILED: 'background-job.failed',
 
-  // External calls
+  // External APIs
   EXTERNAL_API_CALL: 'external-api.called',
   EXTERNAL_API_FAILED: 'external-api.failed',
+
+  // Database
+  DATABASE_CONNECTING: 'database.connecting',
+  DATABASE_CONNECTED: 'database.connected',
+  DATABASE_CONNECTION_FAILED: 'database.connection.failed',
+  DATABASE_DISCONNECTED: 'database.disconnected',
+
+  // Prisma
+  PRISMA_QUERY: 'prisma.query',
+  PRISMA_INFO: 'prisma.info',
+  PRISMA_WARN: 'prisma.warn',
+  PRISMA_ERROR: 'prisma.error',
 } as const;
 
 export type LogEvent = (typeof LogEvents)[keyof typeof LogEvents];

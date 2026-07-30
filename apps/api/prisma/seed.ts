@@ -264,7 +264,6 @@ async function main() {
     console.log(`Welcome notification already exists, skipping.`);
   }
 
-
   // ------------------------------------------------------------------------
   // 8. Engineering Materials Database
   // ------------------------------------------------------------------------
@@ -280,7 +279,6 @@ async function main() {
   });
 
   console.log('Materials inserted successfully');
-
 
   // ------------------------------------------------------------------------
   // 9. Global Search Index for Materials
@@ -321,7 +319,6 @@ async function main() {
   // Done
   // ------------------------------------------------------------------------
   console.log('\n Seed completed successfully.');
-
 }
 
 // --------------------------------------------------------------------------
