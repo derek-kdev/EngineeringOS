@@ -19,7 +19,24 @@ import { UpdateOrganizationDto } from './dto/';
 import * as crypto from 'crypto';
 import { generateSlug } from './utils/slug.utils';
 import { RoleHierarchy } from './constants/roles';
-import { AppLogger, AppLoggerToken, LogEvents } from '../observability/logging';
+import {
+  AppLogger,
+  AppLoggerToken,
+  LogEvents,
+  RequestContextService,
+} from '../observability/logging';
+import { IEventPublisher } from '../events/interfaces/event-publisher.interface';
+import { EVENT_PUBLISHER } from '../events/constants/tokens.constants';
+import { OrganizationCreatedEvent } from './events/organization-created.event';
+import { OrganizationUpdatedEvent } from './events/organization-updated.event';
+import { OrganizationDeletedEvent } from './events/organization-deleted.event';
+import { MembershipInvitedEvent } from './events/membership-invited.event';
+import { MembershipAcceptedEvent } from './events/membership-accepted.event';
+import { MembershipRemovedEvent } from './events/membership-removed.event';
+import { MembershipRoleChangedEvent } from './events/membership-role-changed.event';
+import { InvitationCreatedEvent } from './events/invitation-created.event';
+import { InvitationAcceptedEvent } from './events/invitation-accepted.event';
+import { InvitationDeclinedEvent } from './events/invitation-declined.event';
 import { SearchIndexService } from '../search/search-index.service';
 
 @Injectable()
@@ -28,6 +45,8 @@ export class OrganizationService {
     private readonly prisma: PrismaService,
     private readonly searchIndexService: SearchIndexService,
     @Inject(AppLoggerToken) private readonly logger: AppLogger,
+    @Inject(EVENT_PUBLISHER) private readonly eventPublisher: IEventPublisher,
+    private readonly requestContextService: RequestContextService,
   ) {}
 
   // -------------------------------------------------------------------------
@@ -100,6 +119,23 @@ export class OrganizationService {
         },
       });
 
+      await this.eventPublisher.publish(
+        new OrganizationCreatedEvent({
+          payload: {
+            organizationId: organization.id,
+            name: organization.name,
+            slug: organization.slug,
+            ownerId: userId,
+          },
+          organizationId: organization.id,
+          userId,
+          metadata: {
+            requestId: this.requestContextService.get('requestId'),
+            source: 'organization.create',
+          },
+        }),
+      );
+
       this.logger.info(LogEvents.ORGANIZATION_CREATED, {
         organizationId: organization.id,
         name: organization.name,
@@ -165,6 +201,23 @@ export class OrganizationService {
   async deleteOrganization(organizationId: string) {
     try {
       await this.prisma.organization.delete({ where: { id: organizationId } });
+
+      // Organization Deleted
+      await this.eventPublisher.publish(
+        new OrganizationDeletedEvent({
+          payload: {
+            organizationId,
+            name: OrganizationService.name,
+          },
+          organizationId,
+          userId: this.requestContextService.get('userId'),
+          metadata: {
+            requestId: this.requestContextService.get('requestId'),
+            source: 'organization.delete',
+          },
+        }),
+      );
+
       this.logger.info(LogEvents.ORGANIZATION_DELETED, { organizationId });
       return { message: 'Organization deleted successfully' };
     } catch (error) {
@@ -241,6 +294,23 @@ export class OrganizationService {
           },
         });
       });
+
+      await this.eventPublisher.publish(
+        new OrganizationUpdatedEvent({
+          payload: {
+            organizationId: updatedOrg.id,
+            name: updatedOrg.name,
+            slug: updatedOrg.slug,
+            updatedFields: Object.keys(dto),
+          },
+          organizationId: updatedOrg.id,
+          userId: this.requestContextService.get('userId'),
+          metadata: {
+            requestId: this.requestContextService.get('requestId'),
+            source: 'organization.update',
+          },
+        }),
+      );
 
       this.logger.info(LogEvents.ORGANIZATION_UPDATED, {
         organizationId,
@@ -380,6 +450,25 @@ export class OrganizationService {
           role: newRole,
         },
       });
+
+      await this.eventPublisher.publish(
+        new MembershipRoleChangedEvent({
+          payload: {
+            organizationId,
+            membershipId: updatedMembership.id,
+            userId: targetUserId,
+            changedByUserId: currentUserId,
+            previousRole: targetMembership.role,
+            newRole,
+          },
+          organizationId,
+          userId: targetUserId,
+          metadata: {
+            requestId: this.requestContextService?.get('requestId'),
+            source: 'organization.updateMemberRole',
+          },
+        }),
+      );
 
       this.logger.info(LogEvents.MEMBERSHIP_ROLE_UPDATED, {
         organizationId,
@@ -535,6 +624,25 @@ export class OrganizationService {
         },
       });
 
+      await this.eventPublisher.publish(
+        new MembershipRemovedEvent({
+          payload: {
+            membershipId: updated.id,
+            organizationId,
+            userId: targetUserId,
+            removedByUserId: currentUserId,
+            reason:
+              targetUserId === currentUserId ? 'self_removal' : 'admin_removal',
+          },
+          organizationId,
+          userId: this.requestContextService.get('userId'),
+          metadata: {
+            requestId: this.requestContextService.get('requestId'),
+            source: 'organization.removeMember',
+          },
+        }),
+      );
+
       this.logger.info(LogEvents.MEMBERSHIP_REMOVED, {
         organizationId,
         removedUserId: targetUserId,
@@ -626,6 +734,48 @@ export class OrganizationService {
         where: { id: organizationId },
         select: { name: true },
       });
+
+      // Membership Invited
+      await this.eventPublisher.publish(
+        new MembershipInvitedEvent({
+          payload: {
+            organizationId,
+            email,
+            invitedByUserId: invitedById,
+            role,
+          },
+          organizationId,
+          userId: this.requestContextService.get('userId'),
+          metadata: {
+            requestId: this.requestContextService.get('requestId'),
+            source: 'membership.invite',
+          },
+        }),
+      );
+
+      // If the user already exists publish MembershipInvitedEvent
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email },
+      });
+      if (existingUser) {
+        await this.eventPublisher.publish(
+          new MembershipInvitedEvent({
+            payload: {
+              organizationId,
+              email,
+              invitedByUserId: invitedById,
+              role,
+              userId: existingUser.id,
+            },
+            organizationId,
+            userId: existingUser.id,
+            metadata: {
+              requestId: this.requestContextService?.get('requestId'),
+              source: 'organization.invite',
+            },
+          }),
+        );
+      }
 
       this.logger.info(LogEvents.INVITATION_SENT, {
         organizationId,
@@ -739,6 +889,42 @@ export class OrganizationService {
 
         return membership;
       });
+
+      // Membership accepted
+      await this.eventPublisher.publish(
+        new MembershipAcceptedEvent({
+          payload: {
+            membershipId: membership.id,
+            organizationId: membership.organizationId,
+            userId: membership.userId,
+            role: membership.role,
+          },
+          organizationId: membership.organizationId,
+          userId: membership.userId,
+          metadata: {
+            requestId: this.requestContextService.get('requestId'),
+            source: 'membership.accept',
+          },
+        }),
+      );
+
+      // Invitation accepted
+      await this.eventPublisher.publish(
+        new InvitationAcceptedEvent({
+          payload: {
+            invitationId: invitation.id,
+            organizationId: invitation.organizationId,
+            email: invitation.email,
+            userId: membership.userId,
+          },
+          organizationId: invitation.organizationId,
+          userId: membership.userId,
+          metadata: {
+            requestId: this.requestContextService.get('requestId'),
+            source: 'invitation.accept',
+          },
+        }),
+      );
 
       this.logger.info(LogEvents.INVITATION_ACCEPTED, {
         organizationId: membership.organizationId,

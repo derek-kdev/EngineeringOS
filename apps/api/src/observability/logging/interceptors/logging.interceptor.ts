@@ -33,21 +33,12 @@ export class LoggingInterceptor implements NestInterceptor {
           this.logger.debug('Request completed', {
             requestId,
             method: request.method,
-            path: request.path,
+            path: request.originalUrl || request.url || request.path,
             statusCode: response.statusCode,
             responseTime,
           });
         },
-        error: () => {
-          const responseTime = Date.now() - now;
-          this.logger.warn('Request failed', {
-            requestId,
-            method: request.method,
-            path: request.path,
-            statusCode: response.statusCode,
-            responseTime,
-          });
-        },
+        // Removed error branch – exception filter handles all failures
       }),
     );
   }

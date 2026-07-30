@@ -4,8 +4,16 @@ import { MailService } from '../mail/mail.service';
 import { PasswordService } from '../common/security/password.service';
 import { ConfigService } from '@nestjs/config';
 import { randomBytes, createHash } from 'crypto';
-
-import { AppLogger, AppLoggerToken, LogEvents } from '../observability/logging';
+import { IEventPublisher } from '../events/interfaces/event-publisher.interface';
+import { EVENT_PUBLISHER } from '../events/constants/tokens.constants';
+import { PasswordResetRequestedEvent } from './events/password-reset-requested.event';
+import { PasswordResetCompletedEvent } from './events/password-reset-completed.event';
+import {
+  AppLogger,
+  AppLoggerToken,
+  LogEvents,
+  RequestContextService,
+} from '../observability/logging';
 
 @Injectable()
 export class PasswordResetService {
@@ -16,8 +24,10 @@ export class PasswordResetService {
     private readonly mailService: MailService,
     private readonly passwordService: PasswordService,
     private readonly configService: ConfigService,
+    private readonly requestContextService: RequestContextService,
     @Inject(AppLoggerToken)
     private readonly logger: AppLogger,
+    @Inject(EVENT_PUBLISHER) private readonly eventPublisher: IEventPublisher,
   ) {
     this.webUrl =
       this.configService.get<string>('WEB_URL') || 'http://localhost:3000';
@@ -42,7 +52,6 @@ export class PasswordResetService {
 
       // Do not reveal whether an account exists
       if (!user) {
-        // Do not leak existence, but log debug
         this.logger.debug(
           LogEvents.PASSWORD_RESET_REQUESTED + '.user_not_found',
           { email },
@@ -59,9 +68,7 @@ export class PasswordResetService {
       });
 
       const token = this.generateToken();
-
       const tokenHash = this.hashToken(token);
-
       const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
       await this.prisma.passwordResetToken.create({
@@ -75,6 +82,20 @@ export class PasswordResetService {
       const resetUrl = `${this.webUrl}/reset-password?token=${token}`;
 
       await this.mailService.sendPasswordResetEmail(email, resetUrl);
+
+      await this.eventPublisher.publish(
+        new PasswordResetRequestedEvent({
+          payload: {
+            userId: user.id,
+          },
+          organizationId: undefined,
+          userId: user.id,
+          metadata: {
+            requestId: this.requestContextService.get('requestId'),
+            source: 'password-reset.request',
+          },
+        }),
+      );
 
       this.logger.info(LogEvents.PASSWORD_RESET_REQUESTED, {
         userId: user.id,
@@ -144,6 +165,20 @@ export class PasswordResetService {
           },
         }),
       ]);
+
+      await this.eventPublisher.publish(
+        new PasswordResetCompletedEvent({
+          payload: {
+            userId: record.userId,
+          },
+          organizationId: undefined,
+          userId: record.userId,
+          metadata: {
+            requestId: this.requestContextService.get('requestId'),
+            source: 'password-reset.complete',
+          },
+        }),
+      );
 
       this.logger.info(LogEvents.PASSWORD_RESET_COMPLETED, {
         userId: record.userId,

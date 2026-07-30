@@ -9,7 +9,17 @@ import {
   HttpException,
   Inject,
 } from '@nestjs/common';
-import { AppLogger, LogEvents } from '../observability/logging';
+import { IEventPublisher } from '../events/interfaces/event-publisher.interface';
+import { EVENT_PUBLISHER } from '../events/constants/tokens.constants';
+import { UserRegisteredEvent } from './events/user-registered.event';
+import { UserLoggedInEvent } from './events/user-logged-in.event';
+import { UserLoggedOutEvent } from './events/user-logged-out.event';
+import { PasswordChangedEvent } from './events/password-changed.event';
+import {
+  AppLogger,
+  LogEvents,
+  RequestContextService,
+} from '../observability/logging';
 import { AppLoggerToken } from '../observability/logging';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/user.service';
@@ -18,7 +28,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SessionsService } from '../sessions/sessions.service';
 import { EmailVerificationService } from '../email-verification/email-verification.service';
 import { PasswordResetService } from '../password-reset/password-reset.service';
-import { LoginDto, RegisterDto, RefreshTokenDto } from './dto';
+import { LoginDto, RefreshTokenDto, RegisterDto } from './dto';
 import { AuthTokens } from './interfaces/auth-tokens.interface';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { createHash } from 'crypto';
@@ -27,8 +37,11 @@ import { CreateOrganizationDto } from '../organizations/dto';
 
 @Injectable()
 export class AuthService {
+  //requestContextService: any;
   constructor(
     @Inject(AppLoggerToken) private readonly logger: AppLogger,
+    @Inject(EVENT_PUBLISHER) private readonly eventPublisher: IEventPublisher,
+    private readonly requestContextService: RequestContextService,
     private readonly usersService: UsersService,
     private readonly passwordService: PasswordService,
     private readonly jwtService: JwtService,
@@ -49,65 +62,76 @@ export class AuthService {
     try {
       const passwordHash = await this.passwordService.hash(dto.password);
 
-      const { user, tokens } = await this.prisma.$transaction(async (tx) => {
-        // 1. Create user (no organization)
-        const user = await this.usersService.create(
-          {
-            firstName: dto.firstName,
-            lastName: dto.lastName,
-            email: dto.email,
-            passwordHash,
-          },
-          tx,
-        );
-
-        // 2. Optionally create organization
-        if (dto.organization?.create) {
-          const orgDto: CreateOrganizationDto = {
-            name: dto.organization.name!,
-            slug: dto.organization.slug,
-          };
-
-          await this.organizationService.createOrganization(
-            user.id,
-            orgDto,
+      const { user, tokens, organizationId } = await this.prisma.$transaction(
+        async (tx) => {
+          // 1. Create user (no organization)
+          const user = await this.usersService.create(
+            {
+              firstName: dto.firstName,
+              lastName: dto.lastName,
+              email: dto.email,
+              passwordHash,
+            },
             tx,
           );
-        }
 
-        // 3. Generate JWT tokens
-        const tokens = await this.generateTokens({
-          id: user.id,
-          email: user.email,
-          role: user.role,
-        });
+          let organizationId: string | undefined;
 
-        // 4. Store refresh token
-        const refreshTokenHash = this.hashToken(tokens.refreshToken);
-        const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+          // 2. Optionally create organization
+          if (dto.organization?.create) {
+            const orgDto: CreateOrganizationDto = {
+              name: dto.organization.name!,
+              slug: dto.organization.slug,
+            };
 
-        await tx.refreshToken.create({
-          data: {
-            userId: user.id,
-            tokenHash: refreshTokenHash,
-            expiresAt: refreshExpiry,
-          },
-        });
+            const organization =
+              await this.organizationService.createOrganization(
+                user.id,
+                orgDto,
+                tx,
+              );
 
-        // 5. Create session
-        const sessionExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+            organizationId = organization.id;
+          }
 
-        await tx.session.create({
-          data: {
-            userId: user.id,
-            ipAddress: ipAddress?.slice(0, 45),
-            userAgent: userAgent?.slice(0, 255),
-            expiresAt: sessionExpiry,
-          },
-        });
+          // 3. Generate JWT tokens
+          const tokens = await this.generateTokens({
+            id: user.id,
+            email: user.email,
+            role: user.role,
+          });
 
-        return { user, tokens };
-      });
+          // 4. Store refresh token
+          const refreshTokenHash = this.hashToken(tokens.refreshToken);
+          const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+          await tx.refreshToken.create({
+            data: {
+              userId: user.id,
+              tokenHash: refreshTokenHash,
+              expiresAt: refreshExpiry,
+            },
+          });
+
+          // 5. Create session
+          const sessionExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+          await tx.session.create({
+            data: {
+              userId: user.id,
+              ipAddress: ipAddress?.slice(0, 45),
+              userAgent: userAgent?.slice(0, 255),
+              expiresAt: sessionExpiry,
+            },
+          });
+
+          return {
+            user,
+            tokens,
+            organizationId,
+          };
+        },
+      );
 
       // Send verification email if configured
       const globalSendEmail =
@@ -128,6 +152,25 @@ export class AuthService {
         });
       }
 
+      // Publish registration event after the transaction has committed
+      await this.eventPublisher.publish(
+        new UserRegisteredEvent({
+          payload: {
+            userId: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+          },
+          userId: user.id,
+          organizationId,
+          metadata: {
+            requestId: this.requestContextService.get('requestId'),
+            ipAddress,
+            source: 'auth.register',
+          },
+        }),
+      );
+
       this.logger.info(LogEvents.AUTH_REGISTER, {
         userId: user.id,
         email: user.email,
@@ -145,7 +188,6 @@ export class AuthService {
       throw error;
     }
   }
-
   // ─── Login ──────────────────────────────────────────────────────────
 
   async login(
@@ -173,7 +215,6 @@ export class AuthService {
 
       if (attemptRecord && attemptRecord.lockedUntil !== null) {
         this.logger.warn(LogEvents.AUTH_LOGIN + '.failed', {
-          userId: user.id,
           email: user.email,
           reason: 'Account locked',
           ipAddress,
@@ -214,7 +255,6 @@ export class AuthService {
           }
 
           this.logger.warn(LogEvents.AUTH_LOGIN + '.failed', {
-            userId: user.id,
             email: user.email,
             reason: 'Account locked after failed attempts',
             ipAddress,
@@ -231,7 +271,6 @@ export class AuthService {
         }
 
         this.logger.warn(LogEvents.AUTH_LOGIN + '.failed', {
-          userId: user.id,
           email: user.email,
           reason: 'Invalid password',
           ipAddress,
@@ -287,6 +326,22 @@ export class AuthService {
         return tokens;
       });
 
+      // Publish login event after the transaction has committed
+      await this.eventPublisher.publish(
+        new UserLoggedInEvent({
+          payload: {
+            userId: user.id,
+            email: user.email,
+          },
+          userId: user.id,
+          metadata: {
+            requestId: this.requestContextService.get('requestId'),
+            ipAddress,
+            source: 'auth.login',
+          },
+        }),
+      );
+
       this.logger.info(LogEvents.AUTH_LOGIN, {
         userId: user.id,
         email: user.email,
@@ -310,6 +365,7 @@ export class AuthService {
       throw error;
     }
   }
+
   // ─── Refresh Token ──────────────────────────────────────────────────
 
   async refresh(dto: RefreshTokenDto): Promise<AuthTokens> {
@@ -377,6 +433,20 @@ export class AuthService {
       // Revoke all active sessions for the user
       await this.sessionsService.revokeAllSessions(userId);
 
+      // Publish logout event after successful revocation
+      await this.eventPublisher.publish(
+        new UserLoggedOutEvent({
+          payload: {
+            userId,
+          },
+          userId,
+          metadata: {
+            requestId: this.requestContextService.get('requestId'),
+            source: 'auth.logout',
+          },
+        }),
+      );
+
       this.logger.info(LogEvents.AUTH_LOGOUT, { userId });
     } catch (error) {
       this.logger.error(LogEvents.AUTH_LOGOUT + '.failed', error, { userId });
@@ -439,6 +509,18 @@ export class AuthService {
       data: { revokedAt: new Date() },
     });
     await this.sessionsService.revokeAllSessions(userId);
+
+    await this.eventPublisher.publish(
+      new PasswordChangedEvent({
+        payload: { userId },
+        organizationId: undefined,
+        userId,
+        metadata: {
+          requestId: this.requestContextService.get('requestId'),
+          source: 'auth.changePassword',
+        },
+      }),
+    );
   }
 
   // ─── Email Verification ────────────────────────────────────────────

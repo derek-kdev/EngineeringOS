@@ -3,4 +3,6 @@ export interface EventMetadata {
   correlationId?: string;
   causationId?: string;
   source?: string;
+  ipAddress?: string;
+  userAgent?: string;
 }

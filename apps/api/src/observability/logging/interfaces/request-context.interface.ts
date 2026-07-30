@@ -7,5 +7,6 @@ export interface RequestContext {
   userAgent?: string;
   path?: string;
   method?: string;
+  correlationId?: string;
   [key: string]: unknown;
 }

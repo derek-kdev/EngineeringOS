@@ -32,17 +32,23 @@ export const buildLoggingConfig = (configService: ConfigService): Params => {
       req: (req: any) => ({
         id: req.id,
         method: req.method,
+
+        // Keep both for debugging/proxy troubleshooting
         url: req.url,
-        path: req.path,
+        path: req.originalUrl || req.url || req.path,
+
         query: req.query,
         params: req.params,
+
         headers: {
           'user-agent': req.headers['user-agent'],
           'x-request-id': req.headers['x-request-id'],
         },
+
         remoteAddress: req.remoteAddress,
         remotePort: req.remotePort,
       }),
+
       res: (res: any) => ({
         statusCode: res.statusCode,
         headers: {
@@ -79,7 +85,7 @@ export const buildLoggingConfig = (configService: ConfigService): Params => {
             ignore: 'pid,hostname',
           },
         },
-        autoLogging: true,
+        autoLogging: false,
       },
     };
   }
