@@ -1,5 +1,6 @@
 import { BaseApplicationEvent } from '../../events/base/application-event.base';
 import { EventMetadata } from '../../events/interfaces/event-metadata.interface';
+import { EventNames } from '../../events/constants/event-names.constants';
 
 interface OrganizationDeletedPayload {
   organizationId: string;
@@ -8,8 +9,6 @@ interface OrganizationDeletedPayload {
 }
 
 export class OrganizationDeletedEvent extends BaseApplicationEvent<OrganizationDeletedPayload> {
-  static readonly eventName = 'organization.deleted';
-
   constructor(params: {
     payload: OrganizationDeletedPayload;
     id?: string;
@@ -18,6 +17,9 @@ export class OrganizationDeletedEvent extends BaseApplicationEvent<OrganizationD
     userId?: string;
     metadata?: Partial<EventMetadata>;
   }) {
-    super({ ...params, eventName: OrganizationDeletedEvent.eventName });
+    super({
+      ...params,
+      eventName: EventNames.ORGANIZATION_DELETED,
+    });
   }
 }

@@ -1,5 +1,6 @@
 import { BaseApplicationEvent } from '../../events/base/application-event.base';
 import { EventMetadata } from '../../events/interfaces/event-metadata.interface';
+import { EventNames } from '../../events/constants/event-names.constants';
 
 interface InvitationAcceptedPayload {
   invitationId: string;
@@ -9,8 +10,6 @@ interface InvitationAcceptedPayload {
 }
 
 export class InvitationAcceptedEvent extends BaseApplicationEvent<InvitationAcceptedPayload> {
-  static readonly eventName = 'invitation.accepted';
-
   constructor(params: {
     payload: InvitationAcceptedPayload;
     id?: string;
@@ -19,6 +18,9 @@ export class InvitationAcceptedEvent extends BaseApplicationEvent<InvitationAcce
     userId?: string;
     metadata?: Partial<EventMetadata>;
   }) {
-    super({ ...params, eventName: InvitationAcceptedEvent.eventName });
+    super({
+      eventName: EventNames.INVITATION_ACCEPTED,
+      ...params,
+    });
   }
 }

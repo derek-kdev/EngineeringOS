@@ -1,3 +1,4 @@
+import { EventNames } from '@/events/constants/event-names.constants';
 import { BaseApplicationEvent } from '../../events/base/application-event.base';
 import { EventMetadata } from '../../events/interfaces/event-metadata.interface';
 
@@ -21,6 +22,9 @@ export class MembershipInvitedEvent extends BaseApplicationEvent<MembershipInvit
     userId?: string;
     metadata?: Partial<EventMetadata>;
   }) {
-    super({ ...params, eventName: MembershipInvitedEvent.eventName });
+    super({
+      eventName: EventNames.MEMBERSHIP_INVITED,
+      ...params,
+    });
   }
 }

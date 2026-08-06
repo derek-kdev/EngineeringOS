@@ -15,9 +15,7 @@ export class EventBusService implements IEventPublisher {
   ) {}
 
   async publish<T extends ApplicationEvent<unknown>>(event: T): Promise<void> {
-    // Enrich event with request context
     const enrichedEvent = this.enrichWithContext(event);
-
     this.logger.debug('Publishing event', {
       eventName: enrichedEvent.eventName,
       eventId: enrichedEvent.id,
@@ -25,7 +23,7 @@ export class EventBusService implements IEventPublisher {
       userId: enrichedEvent.userId,
     });
 
-    this.eventEmitter.emit(enrichedEvent.eventName, enrichedEvent);
+    await this.emitSafely(enrichedEvent);
   }
 
   publishSync<T extends ApplicationEvent<unknown>>(event: T): void {
@@ -34,7 +32,7 @@ export class EventBusService implements IEventPublisher {
       eventName: enrichedEvent.eventName,
       eventId: enrichedEvent.id,
     });
-    this.eventEmitter.emit(enrichedEvent.eventName, enrichedEvent);
+    this.emitSafelySync(enrichedEvent);
   }
 
   async publishMany<T extends ApplicationEvent<unknown>>(
@@ -45,12 +43,71 @@ export class EventBusService implements IEventPublisher {
     }
   }
 
+  private async emitSafely<T extends ApplicationEvent<unknown>>(
+    event: T,
+  ): Promise<void> {
+    // eslint-disable-next-line prettier/prettier
+    const listeners = this.eventEmitter.listeners(event.eventName) as unknown as Array<
+      (event: T) => void | Promise<void>
+    >;
+
+    for (const listener of listeners) {
+      try {
+        await listener(event);
+      } catch (error) {
+        this.logger.error(
+          `Handler failed for event "${event.eventName}" (id: ${event.id})`,
+          {
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+            eventId: event.id,
+            eventName: event.eventName,
+          },
+        );
+      }
+    }
+  }
+
+  private emitSafelySync<T extends ApplicationEvent<unknown>>(event: T): void {
+    const listeners = this.eventEmitter.listeners(
+      event.eventName,
+    ) as unknown as Array<(event: T) => void | Promise<void>>;
+
+    for (const listener of listeners) {
+      try {
+        const result = listener(event);
+        if (result instanceof Promise) {
+          result.catch((error) => {
+            this.logger.error(
+              `Async handler failed for event "${event.eventName}" (id: ${event.id})`,
+              {
+                error: error instanceof Error ? error.message : String(error),
+                stack: error instanceof Error ? error.stack : undefined,
+                eventId: event.id,
+                eventName: event.eventName,
+              },
+            );
+          });
+        }
+      } catch (error) {
+        this.logger.error(
+          `Handler failed for event "${event.eventName}" (id: ${event.id})`,
+          {
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+            eventId: event.id,
+            eventName: event.eventName,
+          },
+        );
+      }
+    }
+  }
+
   private enrichWithContext<T extends ApplicationEvent<unknown>>(event: T): T {
     const context = this.contextService.getContext();
     if (!context) {
       return event;
     }
-    // Build merged metadata
     const mergedMetadata = {
       ...event.metadata,
       ...(context.requestId && !event.metadata.requestId
@@ -67,14 +124,11 @@ export class EventBusService implements IEventPublisher {
         : {}),
     };
 
-    // Create a new event-like object with enriched values
-    const enriched = {
+    return {
       ...event,
       metadata: mergedMetadata,
       userId: event.userId ?? context.userId,
       organizationId: event.organizationId ?? context.organizationId,
-    } as T;
-
-    return enriched;
+    };
   }
 }

@@ -1,12 +1,13 @@
 import { BaseApplicationEvent } from '../../events/base/application-event.base';
 import { EventMetadata } from '../../events/interfaces/event-metadata.interface';
+import { EventNames } from '../../events/constants/event-names.constants';
+
 interface PasswordChangedPayload {
   userId: string;
+  email: string;
 }
 
 export class PasswordChangedEvent extends BaseApplicationEvent<PasswordChangedPayload> {
-  static readonly eventName = 'password.changed';
-
   constructor(params: {
     payload: PasswordChangedPayload;
     id?: string;
@@ -15,6 +16,9 @@ export class PasswordChangedEvent extends BaseApplicationEvent<PasswordChangedPa
     userId?: string;
     metadata?: Partial<EventMetadata>;
   }) {
-    super({ ...params, eventName: PasswordChangedEvent.eventName });
+    super({
+      eventName: EventNames.PASSWORD_CHANGED,
+      ...params,
+    });
   }
 }

@@ -31,46 +31,39 @@ export class UsersService {
     input: CreateUserInput,
     tx?: Prisma.TransactionClient, // ADDED: optional transaction client
   ): Promise<SafeUser> {
-    try {
-      const email = input.email.trim().toLowerCase();
-      const firstName = input.firstName.trim();
-      const lastName = input.lastName.trim();
-      const displayName = `${firstName} ${lastName}`;
+    const email = input.email.trim().toLowerCase();
+    const firstName = input.firstName.trim();
+    const lastName = input.lastName.trim();
+    const displayName = `${firstName} ${lastName}`;
 
-      // Use provided transaction client or fallback to default
-      const prisma = tx ?? this.prisma;
+    // Use provided transaction client or fallback to default
+    const prisma = tx ?? this.prisma;
 
-      const existing = await prisma.user.findUnique({ where: { email } });
-      if (existing) {
-        throw new ConflictException('A user with this email already exists.');
-      }
-
-      const user = await prisma.user.create({
-        data: {
-          email,
-          passwordHash: input.passwordHash,
-          firstName,
-          lastName,
-          displayName,
-        },
-      });
-
-      await prisma.userPreference.create({
-        data: { userId: user.id },
-      });
-
-      this.logger.info(LogEvents.USER_CREATED, {
-        userId: user.id,
-        email: user.email,
-      });
-
-      return this.mapper.toSafeUser(user);
-    } catch (error) {
-      this.logger.error(LogEvents.USER_CREATED + '.failed', error, {
-        email: input.email,
-      });
-      throw error;
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      throw new ConflictException('A user with this email already exists.');
     }
+
+    const user = await prisma.user.create({
+      data: {
+        email,
+        passwordHash: input.passwordHash,
+        firstName,
+        lastName,
+        displayName,
+      },
+    });
+
+    await prisma.userPreference.create({
+      data: { userId: user.id },
+    });
+
+    this.logger.info(LogEvents.USER_CREATED, {
+      userId: user.id,
+      email: user.email,
+    });
+
+    return this.mapper.toSafeUser(user);
   }
 
   /**
@@ -106,119 +99,105 @@ export class UsersService {
    * - timezone and locale are updated on the associated UserPreference.
    */
   async update(id: string, dto: UpdateUserDto): Promise<SafeUser> {
-    try {
-      const existingUser = await this.getUserOrThrow(id);
+    const existingUser = await this.getUserOrThrow(id);
 
-      const userUpdateData: Prisma.UserUpdateInput = {};
-      if (dto.firstName !== undefined) {
-        userUpdateData.firstName = dto.firstName.trim();
-      }
-      if (dto.lastName !== undefined) {
-        userUpdateData.lastName = dto.lastName.trim();
-      }
-      if (dto.avatarUrl !== undefined) {
-        userUpdateData.avatarUrl = dto.avatarUrl;
-      }
+    const userUpdateData: Prisma.UserUpdateInput = {};
+    if (dto.firstName !== undefined) {
+      userUpdateData.firstName = dto.firstName.trim();
+    }
+    if (dto.lastName !== undefined) {
+      userUpdateData.lastName = dto.lastName.trim();
+    }
+    if (dto.avatarUrl !== undefined) {
+      userUpdateData.avatarUrl = dto.avatarUrl;
+    }
 
-      if (Object.keys(userUpdateData).length > 0) {
-        await this.prisma.user.update({
-          where: { id },
-          data: userUpdateData,
-        });
-      }
+    if (Object.keys(userUpdateData).length > 0) {
+      await this.prisma.user.update({
+        where: { id },
+        data: userUpdateData,
+      });
+    }
 
-      if (dto.firstName !== undefined || dto.lastName !== undefined) {
-        const firstName =
-          dto.firstName !== undefined
-            ? dto.firstName.trim()
-            : existingUser.firstName;
-        const lastName =
-          dto.lastName !== undefined
-            ? dto.lastName.trim()
-            : existingUser.lastName;
-        userUpdateData.displayName = `${firstName} ${lastName}`;
-      }
+    if (dto.firstName !== undefined || dto.lastName !== undefined) {
+      const firstName =
+        dto.firstName !== undefined
+          ? dto.firstName.trim()
+          : existingUser.firstName;
+      const lastName =
+        dto.lastName !== undefined
+          ? dto.lastName.trim()
+          : existingUser.lastName;
+      userUpdateData.displayName = `${firstName} ${lastName}`;
+    }
 
-      // Apply user updates if any
-      if (Object.keys(userUpdateData).length > 0) {
-        await this.prisma.user.update({
-          where: { id },
-          data: userUpdateData,
-        });
-      }
+    // Apply user updates if any
+    if (Object.keys(userUpdateData).length > 0) {
+      await this.prisma.user.update({
+        where: { id },
+        data: userUpdateData,
+      });
+    }
 
-      //Preference Update
-      const prefUpdateData: Prisma.UserPreferenceUpdateInput = {};
+    //Preference Update
+    const prefUpdateData: Prisma.UserPreferenceUpdateInput = {};
+    if (dto.timezone !== undefined) {
+      prefUpdateData.timezone = dto.timezone;
+    }
+    //Map locale to language enum value if provided
+    if (dto.locale !== undefined) {
+      // Convert to uppercase and check if valid enum
+      const lang = dto.locale.toUpperCase();
+      if (Object.values(Language).includes(lang as Language)) {
+        prefUpdateData.language = lang as Language;
+      } else {
+        // Optionally throw or default to EN
+        prefUpdateData.language = Language.EN;
+      }
+    }
+
+    // Also handle dateFormat/timeFormat if present in DTO
+    if (Object.keys(prefUpdateData).length > 0) {
+      // Build a separate create object with plain values, not update operations
+      const createData: Prisma.UserPreferenceCreateInput = {
+        user: { connect: { id } },
+      };
       if (dto.timezone !== undefined) {
-        prefUpdateData.timezone = dto.timezone;
+        createData.timezone = dto.timezone;
       }
-      //Map locale to language enum value if provided
       if (dto.locale !== undefined) {
-        // Convert to uppercase and check if valid enum
         const lang = dto.locale.toUpperCase();
         if (Object.values(Language).includes(lang as Language)) {
-          prefUpdateData.language = lang as Language;
+          createData.language = lang as Language;
         } else {
-          // Optionally throw or default to EN
-          prefUpdateData.language = Language.EN;
+          createData.language = Language.EN;
         }
       }
 
-      // Also handle dateFormat/timeFormat if present in DTO
-      if (Object.keys(prefUpdateData).length > 0) {
-        // Build a separate create object with plain values, not update operations
-        const createData: Prisma.UserPreferenceCreateInput = {
-          user: { connect: { id } },
-        };
-        if (dto.timezone !== undefined) {
-          createData.timezone = dto.timezone;
-        }
-        if (dto.locale !== undefined) {
-          const lang = dto.locale.toUpperCase();
-          if (Object.values(Language).includes(lang as Language)) {
-            createData.language = lang as Language;
-          } else {
-            createData.language = Language.EN;
-          }
-        }
-
-        await this.prisma.userPreference.upsert({
-          where: { userId: id },
-          update: prefUpdateData,
-          create: createData,
-        });
-      }
-
-      const updatedUser = await this.getUserOrThrow(id);
-      this.logger.info(LogEvents.USER_UPDATED, {
-        userId: id,
-        fields: Object.keys(dto),
+      await this.prisma.userPreference.upsert({
+        where: { userId: id },
+        update: prefUpdateData,
+        create: createData,
       });
-      return this.mapper.toSafeUser(updatedUser);
-    } catch (error) {
-      this.logger.error(LogEvents.USER_UPDATED + '.failed', error, {
-        userId: id,
-      });
-      throw error;
     }
+
+    const updatedUser = await this.getUserOrThrow(id);
+    this.logger.info(LogEvents.USER_UPDATED, {
+      userId: id,
+      fields: Object.keys(dto),
+    });
+    return this.mapper.toSafeUser(updatedUser);
   }
 
   /**
    * Updates a user's password hash (used for reset).
    */
   async updatePassword(userId: string, newPasswordHash: string): Promise<void> {
-    try {
-      await this.prisma.user.update({
-        where: { id: userId },
-        data: { passwordHash: newPasswordHash },
-      });
-      this.logger.info(LogEvents.USER_PASSWORD_UPDATED, { userId });
-    } catch (error) {
-      this.logger.error(LogEvents.USER_PASSWORD_UPDATED + '.failed', error, {
-        userId,
-      });
-      throw error;
-    }
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: newPasswordHash },
+    });
+    this.logger.info(LogEvents.USER_PASSWORD_UPDATED, { userId });
   }
 
   // ─── Token Management Methods ──────────────────────────────────────
@@ -290,50 +269,29 @@ export class UsersService {
   }
 
   async activate(id: string): Promise<SafeUser> {
-    try {
-      const updated = await this.prisma.user.update({
-        where: { id },
-        data: { isActive: true },
-      });
-      this.logger.info(LogEvents.USER_ACTIVATED, { userId: id });
-      return this.mapper.toSafeUser(updated);
-    } catch (error) {
-      this.logger.error(LogEvents.USER_ACTIVATED + '.failed', error, {
-        userId: id,
-      });
-      throw error;
-    }
+    const updated = await this.prisma.user.update({
+      where: { id },
+      data: { isActive: true },
+    });
+    this.logger.info(LogEvents.USER_ACTIVATED, { userId: id });
+    return this.mapper.toSafeUser(updated);
   }
 
   async deactivate(id: string): Promise<SafeUser> {
-    try {
-      const updated = await this.prisma.user.update({
-        where: { id },
-        data: { isActive: false },
-      });
-      this.logger.info(LogEvents.USER_DEACTIVATED, { userId: id });
-      return this.mapper.toSafeUser(updated);
-    } catch (error) {
-      this.logger.error(LogEvents.USER_DEACTIVATED + '.failed', error, {
-        userId: id,
-      });
-      throw error;
-    }
+    const updated = await this.prisma.user.update({
+      where: { id },
+      data: { isActive: false },
+    });
+    this.logger.info(LogEvents.USER_DEACTIVATED, { userId: id });
+    return this.mapper.toSafeUser(updated);
   }
 
   async softDelete(id: string): Promise<void> {
-    try {
-      await this.prisma.user.update({
-        where: { id },
-        data: { deletedAt: new Date(), isActive: false },
-      });
-      this.logger.info(LogEvents.USER_DELETED, { userId: id });
-    } catch (error) {
-      this.logger.error(LogEvents.USER_DELETED + '.failed', error, {
-        userId: id,
-      });
-      throw error;
-    }
+    await this.prisma.user.update({
+      where: { id },
+      data: { deletedAt: new Date(), isActive: false },
+    });
+    this.logger.info(LogEvents.USER_DELETED, { userId: id });
   }
 
   // ─── Private Helpers ────────────────────────────────────────────────

@@ -19,7 +19,6 @@ import { LoggingModule } from '../observability/logging/logging.module';
     }),
     LoggingModule, // provides AppLogger
     // Import any modules needed by handlers (Audit, Notifications, Analytics)
-    // These modules should be available in the application.
   ],
   providers: [
     EventBusService,
@@ -32,6 +31,6 @@ import { LoggingModule } from '../observability/logging/logging.module';
     ProjectCreatedNotificationHandler,
     ProjectCreatedAnalyticsHandler,*/
   ],
-  exports: [EVENT_PUBLISHER, EventBusService],
+  exports: [EVENT_PUBLISHER],
 })
 export class ApplicationEventsModule {}

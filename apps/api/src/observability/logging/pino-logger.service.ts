@@ -11,24 +11,41 @@ export class PinoLoggerService implements AppLogger {
   ) {}
 
   private getMeta(meta?: Record<string, unknown>): Record<string, unknown> {
-    const context = this.contextService.getContext() || {};
-    return { ...context, ...(meta || {}) };
+    return {
+      ...(this.contextService.getContext() ?? {}),
+      ...(meta ?? {}),
+    };
+  }
+
+  private log(
+    level: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal',
+    message: string,
+    meta?: Record<string, unknown>,
+    error?: unknown,
+  ): void {
+    this.pinoLogger[level](
+      {
+        ...this.getMeta(meta),
+        ...(error instanceof Error ? { err: error } : {}),
+      },
+      message,
+    );
   }
 
   trace(message: string, meta?: Record<string, unknown>): void {
-    this.pinoLogger.trace({ ...this.getMeta(meta) }, message);
+    this.log('trace', message, meta);
   }
 
   debug(message: string, meta?: Record<string, unknown>): void {
-    this.pinoLogger.debug({ ...this.getMeta(meta) }, message);
+    this.log('debug', message, meta);
   }
 
   info(message: string, meta?: Record<string, unknown>): void {
-    this.pinoLogger.info({ ...this.getMeta(meta) }, message);
+    this.log('info', message, meta);
   }
 
   warn(message: string, meta?: Record<string, unknown>): void {
-    this.pinoLogger.warn({ ...this.getMeta(meta) }, message);
+    this.log('warn', message, meta);
   }
 
   error(
@@ -36,18 +53,7 @@ export class PinoLoggerService implements AppLogger {
     error?: unknown,
     meta?: Record<string, unknown>,
   ): void {
-    const err = error instanceof Error ? error : undefined;
-    const combinedMeta = {
-      ...this.getMeta(meta),
-      ...(err && {
-        error: {
-          name: err.name,
-          message: err.message,
-          stack: err.stack,
-        },
-      }),
-    };
-    this.pinoLogger.error(combinedMeta, message);
+    this.log('error', message, meta, error);
   }
 
   fatal(
@@ -55,17 +61,6 @@ export class PinoLoggerService implements AppLogger {
     error?: unknown,
     meta?: Record<string, unknown>,
   ): void {
-    const err = error instanceof Error ? error : undefined;
-    const combinedMeta = {
-      ...this.getMeta(meta),
-      ...(err && {
-        error: {
-          name: err.name,
-          message: err.message,
-          stack: err.stack,
-        },
-      }),
-    };
-    this.pinoLogger.fatal(combinedMeta, message);
+    this.log('fatal', message, meta, error);
   }
 }

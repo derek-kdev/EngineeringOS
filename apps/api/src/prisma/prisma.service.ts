@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import {
   Injectable,
   OnModuleInit,
@@ -29,29 +30,25 @@ export class PrismaService
 
     super({
       adapter,
-      log: [/*'query', 'info',*/ 'warn', 'error'],
     });
   }
 
   async onModuleInit(): Promise<void> {
     this.logger.info(LogEvents.DATABASE_CONNECTING);
-
     try {
       await this.$connect();
-
+      await this.$queryRaw`SELECT 1`;
       this.logger.info(LogEvents.DATABASE_CONNECTED);
     } catch (error) {
       this.logger.error(LogEvents.DATABASE_CONNECTION_FAILED, error, {
         database: 'postgres',
       });
-
       throw error;
     }
   }
 
   async onModuleDestroy(): Promise<void> {
     await this.$disconnect();
-
     this.logger.info(LogEvents.DATABASE_DISCONNECTED);
   }
 }

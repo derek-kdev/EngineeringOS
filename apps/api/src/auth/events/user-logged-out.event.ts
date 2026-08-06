@@ -1,16 +1,13 @@
 import { EventMetadata } from '../../events/interfaces/event-metadata.interface';
 import { BaseApplicationEvent } from '../../events/base/application-event.base';
+import { EventNames } from '../../events/constants/event-names.constants';
 
 interface UserLoggedOutPayload {
   userId: string;
   email?: string;
-  ipAddress?: string;
-  userAgent?: string;
 }
 
 export class UserLoggedOutEvent extends BaseApplicationEvent<UserLoggedOutPayload> {
-  static readonly eventName = 'user.logged_out';
-
   constructor(params: {
     payload: UserLoggedOutPayload;
     id?: string;
@@ -19,6 +16,9 @@ export class UserLoggedOutEvent extends BaseApplicationEvent<UserLoggedOutPayloa
     userId?: string;
     metadata?: Partial<EventMetadata>;
   }) {
-    super({ ...params, eventName: UserLoggedOutEvent.eventName });
+    super({
+      eventName: EventNames.USER_LOGGED_OUT,
+      ...params,
+    });
   }
 }

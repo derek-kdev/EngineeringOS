@@ -1,23 +1,25 @@
+import { EventMetadata } from '@/events/interfaces/event-metadata.interface';
 import { BaseApplicationEvent } from '../../events/base/application-event.base';
-import { EventMetadata } from '../../events/interfaces/event-metadata.interface';
+import { EventNames } from '../../events/constants/event-names.constants';
 
-interface UserRegisteredPayload {
+export interface UserRegisteredPayload {
   userId: string;
   email: string;
   firstName: string;
   lastName: string;
 }
-
 export class UserRegisteredEvent extends BaseApplicationEvent<UserRegisteredPayload> {
-  static readonly eventName = 'user.registered';
   constructor(params: {
     payload: UserRegisteredPayload;
     id?: string;
     occurredAt?: Date;
-    organizationId?: string;
     userId?: string;
+    organizationId?: string;
     metadata?: Partial<EventMetadata>;
   }) {
-    super({ ...params, eventName: UserRegisteredEvent.eventName });
+    super({
+      eventName: EventNames.USER_REGISTERED,
+      ...params,
+    });
   }
 }

@@ -87,6 +87,7 @@ export class PasswordResetService {
         new PasswordResetRequestedEvent({
           payload: {
             userId: user.id,
+            email: '',
           },
           organizationId: undefined,
           userId: user.id,
@@ -170,6 +171,7 @@ export class PasswordResetService {
         new PasswordResetCompletedEvent({
           payload: {
             userId: record.userId,
+            email: '',
           },
           organizationId: undefined,
           userId: record.userId,

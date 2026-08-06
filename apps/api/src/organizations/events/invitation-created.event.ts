@@ -1,5 +1,6 @@
 import { BaseApplicationEvent } from '../../events/base/application-event.base';
 import { EventMetadata } from '../../events/interfaces/event-metadata.interface';
+import { EventNames } from '../../events/constants/event-names.constants';
 
 interface InvitationCreatedPayload {
   invitationId: string;
@@ -11,8 +12,6 @@ interface InvitationCreatedPayload {
 }
 
 export class InvitationCreatedEvent extends BaseApplicationEvent<InvitationCreatedPayload> {
-  static readonly eventName = 'invitation.created';
-
   constructor(params: {
     payload: InvitationCreatedPayload;
     id?: string;
@@ -21,6 +20,9 @@ export class InvitationCreatedEvent extends BaseApplicationEvent<InvitationCreat
     userId?: string;
     metadata?: Partial<EventMetadata>;
   }) {
-    super({ ...params, eventName: InvitationCreatedEvent.eventName });
+    super({
+      eventName: EventNames.INVITATION_CREATED,
+      ...params,
+    });
   }
 }

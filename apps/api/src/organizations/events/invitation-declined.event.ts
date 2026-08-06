@@ -1,5 +1,6 @@
 import { BaseApplicationEvent } from '../../events/base/application-event.base';
 import { EventMetadata } from '../../events/interfaces/event-metadata.interface';
+import { EventNames } from '../../events/constants/event-names.constants';
 
 interface InvitationDeclinedPayload {
   invitationId: string;
@@ -9,8 +10,6 @@ interface InvitationDeclinedPayload {
 }
 
 export class InvitationDeclinedEvent extends BaseApplicationEvent<InvitationDeclinedPayload> {
-  static readonly eventName = 'invitation.declined';
-
   constructor(params: {
     payload: InvitationDeclinedPayload;
     id?: string;
@@ -19,6 +18,9 @@ export class InvitationDeclinedEvent extends BaseApplicationEvent<InvitationDecl
     userId?: string;
     metadata?: Partial<EventMetadata>;
   }) {
-    super({ ...params, eventName: InvitationDeclinedEvent.eventName });
+    super({
+      eventName: EventNames.INVITATION_DECLINED,
+      ...params,
+    });
   }
 }

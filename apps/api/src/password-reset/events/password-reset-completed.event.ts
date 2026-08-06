@@ -1,12 +1,13 @@
 import { BaseApplicationEvent } from '../../events/base/application-event.base';
 import { EventMetadata } from '../../events/interfaces/event-metadata.interface';
+import { EventNames } from '../../events/constants/event-names.constants';
+
 interface PasswordResetCompletedPayload {
   userId: string;
+  email: string;
 }
 
 export class PasswordResetCompletedEvent extends BaseApplicationEvent<PasswordResetCompletedPayload> {
-  static readonly eventName = 'password.reset_completed';
-
   constructor(params: {
     payload: PasswordResetCompletedPayload;
     id?: string;
@@ -15,6 +16,9 @@ export class PasswordResetCompletedEvent extends BaseApplicationEvent<PasswordRe
     userId?: string;
     metadata?: Partial<EventMetadata>;
   }) {
-    super({ ...params, eventName: PasswordResetCompletedEvent.eventName });
+    super({
+      eventName: EventNames.PASSWORD_RESET_COMPLETED,
+      ...params,
+    });
   }
 }

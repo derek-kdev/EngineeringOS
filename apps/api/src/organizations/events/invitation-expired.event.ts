@@ -1,15 +1,15 @@
 import { BaseApplicationEvent } from '../../events/base/application-event.base';
 import { EventMetadata } from '../../events/interfaces/event-metadata.interface';
+import { EventNames } from '../../events/constants/event-names.constants';
 
 interface InvitationExpiredPayload {
   invitationId: string;
   organizationId: string;
   email: string;
+  userId: string;
 }
 
 export class InvitationExpiredEvent extends BaseApplicationEvent<InvitationExpiredPayload> {
-  static readonly eventName = 'invitation.expired';
-
   constructor(params: {
     payload: InvitationExpiredPayload;
     id?: string;
@@ -18,6 +18,9 @@ export class InvitationExpiredEvent extends BaseApplicationEvent<InvitationExpir
     userId?: string;
     metadata?: Partial<EventMetadata>;
   }) {
-    super({ ...params, eventName: InvitationExpiredEvent.eventName });
+    super({
+      eventName: EventNames.INVITATION_EXPIRED,
+      ...params,
+    });
   }
 }

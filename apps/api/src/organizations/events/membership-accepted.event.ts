@@ -1,15 +1,16 @@
 import { BaseApplicationEvent } from '../../events/base/application-event.base';
 import { EventMetadata } from '../../events/interfaces/event-metadata.interface';
+import { EventNames } from '../../events/constants/event-names.constants';
+
 interface MembershipAcceptedPayload {
   membershipId: string;
   organizationId: string;
   userId: string;
+  email?: string;
   role: string;
 }
 
 export class MembershipAcceptedEvent extends BaseApplicationEvent<MembershipAcceptedPayload> {
-  static readonly eventName = 'membership.accepted';
-
   constructor(params: {
     payload: MembershipAcceptedPayload;
     id?: string;
@@ -18,6 +19,9 @@ export class MembershipAcceptedEvent extends BaseApplicationEvent<MembershipAcce
     userId?: string;
     metadata?: Partial<EventMetadata>;
   }) {
-    super({ ...params, eventName: MembershipAcceptedEvent.eventName });
+    super({
+      eventName: EventNames.MEMBERSHIP_ACCEPTED,
+      ...params,
+    });
   }
 }
